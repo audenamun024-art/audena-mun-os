@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, Search, X, Bell } from "lucide-react";
+import { Menu, Search, X, Home, CalendarDays, Film, Trophy, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SearchModal from "./SearchModal";
 import SidebarMenu from "./SidebarMenu";
@@ -11,65 +11,64 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   const navItems = [
-    { path: "/", label: "Home", icon: "🏠" },
-    { path: "/events", label: "Events", icon: "🗓" },
-    { path: "/buzz", label: "Buzz", icon: "🎬" },
-    { path: "/rankboard", label: "Rankboard", icon: "🏆" },
-    { path: "/profile", label: "Profile", icon: "👤" },
+    { path: "/", label: "Home", icon: Home },
+    { path: "/events", label: "Events", icon: CalendarDays },
+    { path: "/buzz", label: "Buzz", icon: Film },
+    { path: "/rankboard", label: "Ranks", icon: Trophy },
+    { path: "/profile", label: "Profile", icon: User },
   ];
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-navy-gradient border-b border-navy-light">
-        <div className="flex items-center justify-between px-4 h-14">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
+        <div className="flex items-center justify-between px-4 h-12">
           <Button
             variant="ghost"
             size="icon"
-            className="text-gold-light hover:bg-navy-light"
+            className="text-foreground hover:bg-secondary h-9 w-9"
             onClick={() => setSidebarOpen(true)}
           >
             <Menu className="h-5 w-5" />
           </Button>
 
-          <Link to="/" className="font-serif text-xl font-bold text-gold-light tracking-wide">
+          <Link to="/" className="font-serif text-lg font-bold text-gradient-gold tracking-wide">
             AudenaMUN
           </Link>
 
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-gold-light hover:bg-navy-light"
-              onClick={() => setSearchOpen(true)}
-            >
-              <Search className="h-5 w-5" />
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-foreground hover:bg-secondary h-9 w-9"
+            onClick={() => setSearchOpen(true)}
+          >
+            <Search className="h-5 w-5" />
+          </Button>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 pb-20">
+      <main className="flex-1 pb-16">
         {children}
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border shadow-elevated">
-        <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-xl border-t border-border">
+        <div className="flex items-center justify-around h-14 max-w-lg mx-auto">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
+            const Icon = item.icon;
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-colors duration-200 ${
+                className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-all duration-200 ${
                   isActive
                     ? "text-accent"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <span className="text-lg">{item.icon}</span>
+                <Icon className={`h-5 w-5 ${isActive ? "drop-shadow-[0_0_6px_hsl(43,55%,54%)]" : ""}`} />
                 <span className="text-[10px] font-medium">{item.label}</span>
               </Link>
             );

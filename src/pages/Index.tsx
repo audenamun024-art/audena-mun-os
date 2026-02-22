@@ -1,63 +1,54 @@
 import AppLayout from "@/components/layout/AppLayout";
-import { Calendar, Users, TrendingUp, Trophy, ChevronRight, MapPin, Flame, Play } from "lucide-react";
+import { Calendar, Users, Trophy, ChevronRight, MapPin, Flame, Play, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import heroBanner from "@/assets/hero-banner.jpg";
 import eventImg1 from "@/assets/event-placeholder-1.jpg";
 import eventImg2 from "@/assets/event-placeholder-2.jpg";
 import buzzImg from "@/assets/buzz-placeholder.jpg";
 
-const featuredEvents = [
-  { id: 1, title: "Delhi International MUN 2026", date: "Mar 15–17", location: "New Delhi", delegates: 450, fee: "₹1,200", img: eventImg1 },
-  { id: 2, title: "Mumbai Model United Nations", date: "Apr 5–7", location: "Mumbai", delegates: 320, fee: "₹800", img: eventImg2 },
-  { id: 3, title: "National Youth Parliament", date: "May 1–3", location: "Bangalore", delegates: 280, fee: "₹600", img: eventImg1 },
-];
-
-const upcomingEvents = [
-  { id: 4, title: "Kolkata MUN Conference", date: "Jun 12–14", location: "Kolkata", committees: 8 },
-  { id: 5, title: "Chennai Diplomacy Summit", date: "Jul 20–22", location: "Chennai", committees: 6 },
-  { id: 6, title: "Hyderabad Global Affairs MUN", date: "Aug 8–10", location: "Hyderabad", committees: 10 },
-];
-
-const topDelegates = [
-  { name: "Arjun Mehta", institution: "St. Xavier's", points: 340, rank: 1 },
-  { name: "Priya Sharma", institution: "Lady Shri Ram", points: 290, rank: 2 },
-  { name: "Rohan Kapoor", institution: "Hindu College", points: 270, rank: 3 },
-];
-
-const medals = ["🥇", "🥈", "🥉"];
-
-const buzzPreviews = [
-  { title: "Best Speech – UNSC", views: 1240 },
-  { title: "Crisis Reaction – DISEC", views: 980 },
-  { title: "Debate Highlight", views: 756 },
-  { title: "Award Ceremony", views: 2100 },
-];
+const bannerImages = [eventImg1, eventImg2];
 
 const Index = () => {
+  const [events, setEvents] = useState<any[]>([]);
+  const [topDelegates, setTopDelegates] = useState<any[]>([]);
+
+  useEffect(() => {
+    supabase.from("events").select("*").eq("status", "open").limit(6).then(({ data }) => {
+      if (data) setEvents(data);
+    });
+    supabase.from("profiles").select("*").order("rank_points", { ascending: false }).limit(3).then(({ data }) => {
+      if (data) setTopDelegates(data);
+    });
+  }, []);
+
+  const medals = ["🥇", "🥈", "🥉"];
+
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Hero Section */}
-        <section className="relative h-64 overflow-hidden">
+        {/* Hero */}
+        <section className="relative h-72 overflow-hidden">
           <img src={heroBanner} alt="AudenaMUN" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-navy-dark/95 via-navy-dark/60 to-navy-dark/30" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 px-5 pb-5">
-            <h1 className="text-2xl font-serif font-bold text-gold-light mb-1">
-              Welcome to AudenaMUN
+            <h1 className="text-2xl font-serif font-bold text-foreground mb-1">
+              Welcome to <span className="text-gradient-gold">AudenaMUN</span>
             </h1>
-            <p className="text-sm text-gold-light/70 mb-4 leading-relaxed">
-              India's premier Model UN platform. Discover events, compete, and rise through the ranks.
+            <p className="text-sm text-muted-foreground mb-4">
+              India's premier Model UN platform
             </p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2">
               {[
                 { icon: Calendar, label: "Events", value: "24+" },
                 { icon: Users, label: "Delegates", value: "3.2K" },
                 { icon: Trophy, label: "Awards", value: "180" },
               ].map((stat) => (
-                <div key={stat.label} className="bg-navy-light/60 backdrop-blur-sm rounded-lg p-3 text-center border border-gold/10">
-                  <stat.icon className="h-4 w-4 text-gold mx-auto mb-1" />
-                  <p className="text-lg font-bold text-gold-light">{stat.value}</p>
-                  <p className="text-[10px] text-gold-light/60">{stat.label}</p>
+                <div key={stat.label} className="glass-card rounded-xl p-3 text-center">
+                  <stat.icon className="h-4 w-4 text-accent mx-auto mb-1" />
+                  <p className="text-lg font-bold text-foreground">{stat.value}</p>
+                  <p className="text-[10px] text-muted-foreground">{stat.label}</p>
                 </div>
               ))}
             </div>
@@ -67,40 +58,44 @@ const Index = () => {
         {/* Featured Events */}
         <section className="px-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-serif font-bold text-foreground">Featured Events</h2>
+            <h2 className="text-base font-serif font-bold text-foreground">Featured Events</h2>
             <Link to="/events" className="text-xs font-medium text-accent flex items-center gap-0.5">
               View All <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x">
-            {featuredEvents.map((event) => (
+            {(events.length > 0 ? events : [
+              { id: "1", title: "Delhi International MUN 2026", start_date: "2026-03-15", location: "New Delhi", registration_fee: 1200 },
+              { id: "2", title: "Mumbai Model United Nations", start_date: "2026-04-05", location: "Mumbai", registration_fee: 800 },
+              { id: "3", title: "National Youth Parliament", start_date: "2026-05-01", location: "Bangalore", registration_fee: 600 },
+            ]).map((event: any, i: number) => (
               <Link
                 to={`/events/${event.id}`}
                 key={event.id}
-                className="min-w-[260px] snap-start bg-card rounded-xl border border-border overflow-hidden shadow-card hover:shadow-elevated transition-shadow"
+                className="min-w-[240px] snap-start bg-card rounded-xl border border-border overflow-hidden hover:border-accent/30 transition-all"
               >
-                <img src={event.img} alt={event.title} className="w-full h-28 object-cover" />
+                <div className="relative h-28">
+                  <img src={bannerImages[i % 2]} alt={event.title} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
+                </div>
                 <div className="p-3">
                   <h3 className="font-semibold text-sm text-foreground mb-1 line-clamp-1">{event.title}</h3>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
                     <MapPin className="h-3 w-3" />
-                    {event.location} · {event.date}
+                    {event.location} · {event.start_date}
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">{event.delegates} delegates</span>
-                    <span className="text-xs font-bold text-accent">{event.fee}</span>
-                  </div>
+                  <span className="text-xs font-bold text-accent">₹{event.registration_fee}</span>
                 </div>
               </Link>
             ))}
           </div>
         </section>
 
-        {/* Resolution Battles CTA */}
+        {/* Resolution Battles */}
         <section className="px-4">
-          <Link to="/resolution-battles" className="block bg-gradient-to-r from-accent/10 to-accent/5 rounded-xl border border-accent/20 p-4 shadow-card hover:shadow-elevated transition-shadow">
+          <Link to="/resolution-battles" className="block bg-card rounded-xl border border-accent/20 p-4 hover:border-accent/40 transition-colors glow-gold">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
                 <Flame className="h-5 w-5 text-accent" />
               </div>
               <div className="flex-1">
@@ -112,44 +107,27 @@ const Index = () => {
           </Link>
         </section>
 
-        {/* Upcoming Events */}
-        <section className="px-4">
-          <h2 className="text-lg font-serif font-bold text-foreground mb-3">Upcoming Events</h2>
-          <div className="space-y-2">
-            {upcomingEvents.map((event) => (
-              <Link
-                to={`/events/${event.id}`}
-                key={event.id}
-                className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border shadow-card hover:shadow-elevated transition-shadow"
-              >
-                <img src={eventImg2} alt={event.title} className="rounded-lg h-12 w-12 object-cover shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-sm text-foreground line-clamp-1">{event.title}</h3>
-                  <p className="text-xs text-muted-foreground">{event.location} · {event.date}</p>
-                </div>
-                <span className="text-xs text-accent font-medium shrink-0">{event.committees} Committees</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        {/* Rankboard Snapshot */}
+        {/* Top Delegates */}
         <section className="px-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-serif font-bold text-foreground">Top Delegates</h2>
+            <h2 className="text-base font-serif font-bold text-foreground">Top Delegates</h2>
             <Link to="/rankboard" className="text-xs font-medium text-accent flex items-center gap-0.5">
               Full Board <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
           <div className="space-y-2">
-            {topDelegates.map((d, i) => (
-              <div key={d.name} className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border shadow-card">
+            {(topDelegates.length > 0 ? topDelegates : [
+              { full_name: "Arjun Mehta", institution: "St. Xavier's", rank_points: 340 },
+              { full_name: "Priya Sharma", institution: "Lady Shri Ram", rank_points: 290 },
+              { full_name: "Rohan Kapoor", institution: "Hindu College", rank_points: 270 },
+            ]).map((d: any, i: number) => (
+              <div key={i} className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border">
                 <span className="text-xl">{medals[i]}</span>
                 <div className="flex-1">
-                  <p className="font-semibold text-sm text-foreground">{d.name}</p>
+                  <p className="font-semibold text-sm text-foreground">{d.full_name}</p>
                   <p className="text-xs text-muted-foreground">{d.institution}</p>
                 </div>
-                <span className="text-sm font-bold text-accent">{d.points} pts</span>
+                <span className="text-sm font-bold text-accent">{d.rank_points} pts</span>
               </div>
             ))}
           </div>
@@ -158,27 +136,26 @@ const Index = () => {
         {/* Buzz Preview */}
         <section className="px-4 pb-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-serif font-bold text-foreground">Trending on Buzz</h2>
+            <h2 className="text-base font-serif font-bold text-foreground">Trending on Buzz</h2>
             <Link to="/buzz" className="text-xs font-medium text-accent flex items-center gap-0.5">
               Watch More <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {buzzPreviews.map((title, i) => (
+          <div className="grid grid-cols-2 gap-2">
+            {["Best Speech – UNSC", "Crisis Reaction", "Debate Highlight", "Award Ceremony"].map((title, i) => (
               <Link
                 to="/buzz"
                 key={i}
-                className="bg-card rounded-xl border border-border overflow-hidden shadow-card hover:shadow-elevated transition-shadow"
+                className="bg-card rounded-xl border border-border overflow-hidden hover:border-accent/30 transition-colors"
               >
                 <div className="relative h-24">
-                  <img src={buzzImg} alt={title.title} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-navy-dark/40 flex items-center justify-center">
-                    <Play className="h-6 w-6 text-gold-light" />
+                  <img src={buzzImg} alt={title} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <Play className="h-6 w-6 text-foreground" />
                   </div>
                 </div>
-                <div className="p-2.5">
-                  <p className="text-xs font-medium text-foreground line-clamp-1">{title.title}</p>
-                  <p className="text-[10px] text-muted-foreground">{title.views} views</p>
+                <div className="p-2">
+                  <p className="text-xs font-medium text-foreground line-clamp-1">{title}</p>
                 </div>
               </Link>
             ))}

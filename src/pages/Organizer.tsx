@@ -1,50 +1,72 @@
-import { useState } from "react";
-import {
-  Calendar, Users, DollarSign, Plus, Edit, Trash2, Check, X, Download, Eye
-} from "lucide-react";
+import { useState, useEffect } from "react";
+import { Calendar, Users, DollarSign, Plus, Edit, Trash2, Check, X, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-
-const stats = [
-  { label: "Total Events", value: "4", icon: Calendar },
-  { label: "Total Delegates", value: "1,050", icon: Users },
-  { label: "Total Revenue", value: "₹8,40,000", icon: DollarSign },
-];
-
-const events = [
-  { id: 1, title: "Delhi International MUN 2026", date: "Mar 15–17", delegates: 450, committees: 12, revenue: "₹5,40,000", status: "Open" },
-  { id: 2, title: "Summer Session MUN", date: "Jun 1–3", delegates: 200, committees: 6, revenue: "₹1,60,000", status: "Draft" },
-  { id: 3, title: "Youth Parliament Delhi", date: "Aug 20–22", delegates: 300, committees: 8, revenue: "₹1,80,000", status: "Upcoming" },
-];
-
-const applications = [
-  { name: "Kavya Nair", committee: "UNSC", institution: "Presidency College", status: "Pending" },
-  { name: "Siddharth Das", committee: "DISEC", institution: "Jadavpur University", status: "Pending" },
-  { name: "Riya Joshi", committee: "WHO", institution: "Fergusson College", status: "Approved" },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Organizer = () => {
+  const [events, setEvents] = useState<any[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
+  const [stats, setStats] = useState({ events: 0, delegates: 0, revenue: 0 });
+
+  useEffect(() => {
+    const fetch = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: org } = await supabase.from("organizers").select("id").eq("user_id", user.id).single();
+      if (!org) return;
+
+      const { data: evts } = await supabase.from("events").select("*").eq("organizer_id", org.id).order("created_at", { ascending: false });
+      setEvents(evts || []);
+      setStats({ events: evts?.length || 0, delegates: 0, revenue: 0 });
+
+      // Get registrations for all events
+      if (evts && evts.length > 0) {
+        const eventIds = evts.map(e => e.id);
+        const { data: regs } = await supabase.from("registrations").select("*").in("event_id", eventIds).order("created_at", { ascending: false }).limit(10);
+        setApplications(regs || []);
+        setStats(prev => ({ ...prev, delegates: regs?.length || 0 }));
+      }
+    };
+    fetch();
+  }, []);
+
+  const handleApproveReg = async (id: string) => {
+    await supabase.from("registrations").update({ status: "approved" }).eq("id", id);
+    setApplications(applications.map(a => a.id === id ? { ...a, status: "approved" } : a));
+    toast.success("Registration approved");
+  };
+
+  const handleRejectReg = async (id: string) => {
+    await supabase.from("registrations").update({ status: "rejected" }).eq("id", id);
+    setApplications(applications.map(a => a.id === id ? { ...a, status: "rejected" } : a));
+    toast.info("Registration rejected");
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-navy-gradient border-b border-navy-light px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div>
-            <Link to="/" className="font-serif text-xl font-bold text-gold-light tracking-wide">AudenaMUN</Link>
-            <span className="ml-3 text-xs bg-accent/20 text-gold-light px-2 py-0.5 rounded-full">Organizer</span>
-          </div>
-          <Link to="/events/create">
-            <Button size="sm" className="bg-accent text-accent-foreground hover:bg-gold-dark text-xs">
-              <Plus className="h-4 w-4 mr-1" /> Create Event
-            </Button>
-          </Link>
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border px-4 h-12 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Link to="/" className="font-serif text-lg font-bold text-gradient-gold">AudenaMUN</Link>
+          <span className="text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded-full">Organizer</span>
         </div>
+        <Link to="/events/create">
+          <Button size="sm" className="bg-accent text-accent-foreground hover:bg-gold-dark text-xs">
+            <Plus className="h-4 w-4 mr-1" /> Create Event
+          </Button>
+        </Link>
       </header>
 
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
+      <div className="max-w-7xl mx-auto p-4 space-y-4">
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {stats.map((s) => (
-            <div key={s.label} className="bg-card rounded-xl border border-border p-4 shadow-card">
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: "Events", value: stats.events, icon: Calendar },
+            { label: "Delegates", value: stats.delegates, icon: Users },
+            { label: "Revenue", value: `₹${stats.revenue}`, icon: DollarSign },
+          ].map((s) => (
+            <div key={s.label} className="bg-card rounded-xl border border-border p-4">
               <s.icon className="h-5 w-5 text-accent mb-2" />
               <p className="text-2xl font-bold text-foreground">{s.value}</p>
               <p className="text-xs text-muted-foreground">{s.label}</p>
@@ -53,66 +75,58 @@ const Organizer = () => {
         </div>
 
         {/* Events */}
-        <section className="bg-card rounded-xl border border-border p-5 shadow-card">
-          <h2 className="font-serif text-lg font-bold text-foreground mb-4">Your Events</h2>
-          <div className="space-y-3">
-            {events.map((e) => (
-              <div key={e.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                <div>
-                  <h3 className="font-semibold text-sm text-foreground">{e.title}</h3>
-                  <p className="text-xs text-muted-foreground">{e.date} · {e.committees} committees · {e.delegates} delegates</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-bold text-accent">{e.revenue}</span>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                    e.status === "Open" ? "bg-green-100 text-green-700" :
-                    e.status === "Draft" ? "bg-yellow-100 text-yellow-700" :
-                    "bg-muted text-muted-foreground"
-                  }`}>{e.status}</span>
-                  <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0"><Edit className="h-3.5 w-3.5" /></Button>
-                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
+        <section className="bg-card rounded-xl border border-border p-4">
+          <h2 className="font-serif text-base font-bold text-foreground mb-3">Your Events</h2>
+          {events.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No events yet. Create your first event!</p>
+          ) : (
+            <div className="space-y-2">
+              {events.map((e) => (
+                <div key={e.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                  <div>
+                    <h3 className="font-semibold text-sm text-foreground">{e.title}</h3>
+                    <p className="text-xs text-muted-foreground">{e.location} · ₹{e.registration_fee}</p>
                   </div>
+                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full capitalize ${
+                    e.status === "open" ? "bg-green-500/20 text-green-400" : "bg-secondary text-muted-foreground"
+                  }`}>{e.status}</span>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Applications */}
-        <section className="bg-card rounded-xl border border-border p-5 shadow-card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-serif text-lg font-bold text-foreground">Recent Applications</h2>
-            <Button size="sm" variant="outline" className="text-xs">
-              <Download className="h-3.5 w-3.5 mr-1" /> Export CSV
-            </Button>
-          </div>
-          <div className="space-y-3">
-            {applications.map((app, i) => (
-              <div key={i} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                <div>
-                  <p className="font-medium text-sm text-foreground">{app.name}</p>
-                  <p className="text-xs text-muted-foreground">{app.committee} · {app.institution}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {app.status === "Pending" ? (
-                    <>
-                      <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white h-7 w-7 p-0">
+        <section className="bg-card rounded-xl border border-border p-4">
+          <h2 className="font-serif text-base font-bold text-foreground mb-3">Recent Applications</h2>
+          {applications.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No applications yet</p>
+          ) : (
+            <div className="space-y-2">
+              {applications.map((app) => (
+                <div key={app.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                  <div>
+                    <p className="font-medium text-sm text-foreground">{app.full_name}</p>
+                    <p className="text-xs text-muted-foreground">{app.email} · {app.institution}</p>
+                  </div>
+                  {app.status === "pending" ? (
+                    <div className="flex gap-1">
+                      <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white h-7 w-7 p-0" onClick={() => handleApproveReg(app.id)}>
                         <Check className="h-3.5 w-3.5" />
                       </Button>
-                      <Button size="sm" variant="outline" className="text-destructive border-destructive/30 h-7 w-7 p-0">
+                      <Button size="sm" variant="outline" className="text-destructive border-destructive/30 h-7 w-7 p-0" onClick={() => handleRejectReg(app.id)}>
                         <X className="h-3.5 w-3.5" />
                       </Button>
-                    </>
+                    </div>
                   ) : (
-                    <span className="text-xs font-medium bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                      {app.status}
-                    </span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full capitalize ${
+                      app.status === "approved" ? "bg-green-500/20 text-green-400" : "bg-destructive/20 text-destructive"
+                    }`}>{app.status}</span>
                   )}
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </div>

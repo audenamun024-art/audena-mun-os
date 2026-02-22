@@ -17,6 +17,7 @@ import OrganizerRegister from "./pages/OrganizerRegister";
 import Auth from "./pages/Auth";
 import ResolutionBattles from "./pages/ResolutionBattles";
 import CrisisMode from "./pages/CrisisMode";
+import ResearchBrowser from "./pages/ResearchBrowser";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/resolution-battles" element={<ResolutionBattles />} />
           <Route path="/crisis" element={<CrisisMode />} />
+          <Route path="/research" element={<ResearchBrowser />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
