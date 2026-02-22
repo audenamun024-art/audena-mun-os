@@ -1,14 +1,17 @@
 import { Link } from "react-router-dom";
-import { X, Home, Calendar, Video, Trophy, User, Shield, Settings, LogIn } from "lucide-react";
+import { X, Home, Calendar, Video, Trophy, User, Shield, Settings, LogIn, Flame, AlertTriangle, Building2 } from "lucide-react";
 
 const menuItems = [
   { path: "/", label: "Home", icon: Home },
   { path: "/events", label: "Events", icon: Calendar },
   { path: "/buzz", label: "Buzz", icon: Video },
   { path: "/rankboard", label: "Rankboard", icon: Trophy },
+  { path: "/resolution-battles", label: "Resolution Battles", icon: Flame },
+  { path: "/crisis", label: "Crisis Mode", icon: AlertTriangle },
   { path: "/profile", label: "Profile", icon: User },
   { path: "/admin", label: "Admin Dashboard", icon: Shield },
   { path: "/organizer", label: "Organizer Dashboard", icon: Settings },
+  { path: "/organizer/register", label: "Organizer Registration", icon: Building2 },
   { path: "/auth", label: "Sign In", icon: LogIn },
 ];
 
