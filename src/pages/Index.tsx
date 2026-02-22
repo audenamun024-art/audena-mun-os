@@ -1,11 +1,15 @@
 import AppLayout from "@/components/layout/AppLayout";
-import { Calendar, Users, TrendingUp, Trophy, ChevronRight, MapPin } from "lucide-react";
+import { Calendar, Users, TrendingUp, Trophy, ChevronRight, MapPin, Flame, Play } from "lucide-react";
 import { Link } from "react-router-dom";
+import heroBanner from "@/assets/hero-banner.jpg";
+import eventImg1 from "@/assets/event-placeholder-1.jpg";
+import eventImg2 from "@/assets/event-placeholder-2.jpg";
+import buzzImg from "@/assets/buzz-placeholder.jpg";
 
 const featuredEvents = [
-  { id: 1, title: "Delhi International MUN 2026", date: "Mar 15–17", location: "New Delhi", delegates: 450, fee: "₹1,200" },
-  { id: 2, title: "Mumbai Model United Nations", date: "Apr 5–7", location: "Mumbai", delegates: 320, fee: "₹800" },
-  { id: 3, title: "National Youth Parliament", date: "May 1–3", location: "Bangalore", delegates: 280, fee: "₹600" },
+  { id: 1, title: "Delhi International MUN 2026", date: "Mar 15–17", location: "New Delhi", delegates: 450, fee: "₹1,200", img: eventImg1 },
+  { id: 2, title: "Mumbai Model United Nations", date: "Apr 5–7", location: "Mumbai", delegates: 320, fee: "₹800", img: eventImg2 },
+  { id: 3, title: "National Youth Parliament", date: "May 1–3", location: "Bangalore", delegates: 280, fee: "₹600", img: eventImg1 },
 ];
 
 const upcomingEvents = [
@@ -22,30 +26,41 @@ const topDelegates = [
 
 const medals = ["🥇", "🥈", "🥉"];
 
+const buzzPreviews = [
+  { title: "Best Speech – UNSC", views: 1240 },
+  { title: "Crisis Reaction – DISEC", views: 980 },
+  { title: "Debate Highlight", views: 756 },
+  { title: "Award Ceremony", views: 2100 },
+];
+
 const Index = () => {
   return (
     <AppLayout>
       <div className="space-y-6">
         {/* Hero Section */}
-        <section className="bg-navy-gradient px-5 pt-6 pb-8">
-          <h1 className="text-2xl font-serif font-bold text-gold-light mb-2">
-            Welcome to AudenaMUN
-          </h1>
-          <p className="text-sm text-gold-light/70 mb-5 leading-relaxed">
-            India's premier Model UN platform. Discover events, compete, and rise through the ranks.
-          </p>
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { icon: Calendar, label: "Events", value: "24+" },
-              { icon: Users, label: "Delegates", value: "3.2K" },
-              { icon: Trophy, label: "Awards", value: "180" },
-            ].map((stat) => (
-              <div key={stat.label} className="bg-navy-light/50 rounded-lg p-3 text-center border border-gold/10">
-                <stat.icon className="h-4 w-4 text-gold mx-auto mb-1" />
-                <p className="text-lg font-bold text-gold-light">{stat.value}</p>
-                <p className="text-[10px] text-gold-light/60">{stat.label}</p>
-              </div>
-            ))}
+        <section className="relative h-64 overflow-hidden">
+          <img src={heroBanner} alt="AudenaMUN" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-navy-dark/95 via-navy-dark/60 to-navy-dark/30" />
+          <div className="absolute bottom-0 left-0 right-0 px-5 pb-5">
+            <h1 className="text-2xl font-serif font-bold text-gold-light mb-1">
+              Welcome to AudenaMUN
+            </h1>
+            <p className="text-sm text-gold-light/70 mb-4 leading-relaxed">
+              India's premier Model UN platform. Discover events, compete, and rise through the ranks.
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { icon: Calendar, label: "Events", value: "24+" },
+                { icon: Users, label: "Delegates", value: "3.2K" },
+                { icon: Trophy, label: "Awards", value: "180" },
+              ].map((stat) => (
+                <div key={stat.label} className="bg-navy-light/60 backdrop-blur-sm rounded-lg p-3 text-center border border-gold/10">
+                  <stat.icon className="h-4 w-4 text-gold mx-auto mb-1" />
+                  <p className="text-lg font-bold text-gold-light">{stat.value}</p>
+                  <p className="text-[10px] text-gold-light/60">{stat.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -62,23 +77,39 @@ const Index = () => {
               <Link
                 to={`/events/${event.id}`}
                 key={event.id}
-                className="min-w-[260px] snap-start bg-card rounded-xl border border-border p-4 shadow-card hover:shadow-elevated transition-shadow"
+                className="min-w-[260px] snap-start bg-card rounded-xl border border-border overflow-hidden shadow-card hover:shadow-elevated transition-shadow"
               >
-                <div className="bg-navy-gradient rounded-lg h-28 mb-3 flex items-center justify-center">
-                  <Calendar className="h-8 w-8 text-gold/40" />
-                </div>
-                <h3 className="font-semibold text-sm text-foreground mb-1 line-clamp-1">{event.title}</h3>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
-                  <MapPin className="h-3 w-3" />
-                  {event.location} · {event.date}
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">{event.delegates} delegates</span>
-                  <span className="text-xs font-bold text-accent">{event.fee}</span>
+                <img src={event.img} alt={event.title} className="w-full h-28 object-cover" />
+                <div className="p-3">
+                  <h3 className="font-semibold text-sm text-foreground mb-1 line-clamp-1">{event.title}</h3>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+                    <MapPin className="h-3 w-3" />
+                    {event.location} · {event.date}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">{event.delegates} delegates</span>
+                    <span className="text-xs font-bold text-accent">{event.fee}</span>
+                  </div>
                 </div>
               </Link>
             ))}
           </div>
+        </section>
+
+        {/* Resolution Battles CTA */}
+        <section className="px-4">
+          <Link to="/resolution-battles" className="block bg-gradient-to-r from-accent/10 to-accent/5 rounded-xl border border-accent/20 p-4 shadow-card hover:shadow-elevated transition-shadow">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
+                <Flame className="h-5 w-5 text-accent" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-serif font-bold text-sm text-foreground">Resolution Battles</h3>
+                <p className="text-xs text-muted-foreground">Vote on this week's debate topic</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-accent" />
+            </div>
+          </Link>
         </section>
 
         {/* Upcoming Events */}
@@ -91,9 +122,7 @@ const Index = () => {
                 key={event.id}
                 className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border shadow-card hover:shadow-elevated transition-shadow"
               >
-                <div className="bg-navy-gradient rounded-lg h-12 w-12 flex items-center justify-center shrink-0">
-                  <Calendar className="h-5 w-5 text-gold/50" />
-                </div>
+                <img src={eventImg2} alt={event.title} className="rounded-lg h-12 w-12 object-cover shrink-0" />
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-sm text-foreground line-clamp-1">{event.title}</h3>
                   <p className="text-xs text-muted-foreground">{event.location} · {event.date}</p>
@@ -114,10 +143,7 @@ const Index = () => {
           </div>
           <div className="space-y-2">
             {topDelegates.map((d, i) => (
-              <div
-                key={d.name}
-                className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border shadow-card"
-              >
+              <div key={d.name} className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border shadow-card">
                 <span className="text-xl">{medals[i]}</span>
                 <div className="flex-1">
                   <p className="font-semibold text-sm text-foreground">{d.name}</p>
@@ -138,18 +164,21 @@ const Index = () => {
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            {["Best Speech – UNSC", "Crisis Reaction – DISEC", "Debate Highlight", "Award Ceremony"].map((title, i) => (
+            {buzzPreviews.map((title, i) => (
               <Link
                 to="/buzz"
                 key={i}
                 className="bg-card rounded-xl border border-border overflow-hidden shadow-card hover:shadow-elevated transition-shadow"
               >
-                <div className="bg-navy-gradient h-24 flex items-center justify-center">
-                  <span className="text-2xl">🎬</span>
+                <div className="relative h-24">
+                  <img src={buzzImg} alt={title.title} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-navy-dark/40 flex items-center justify-center">
+                    <Play className="h-6 w-6 text-gold-light" />
+                  </div>
                 </div>
                 <div className="p-2.5">
-                  <p className="text-xs font-medium text-foreground line-clamp-1">{title}</p>
-                  <p className="text-[10px] text-muted-foreground">{(i + 1) * 234} views</p>
+                  <p className="text-xs font-medium text-foreground line-clamp-1">{title.title}</p>
+                  <p className="text-[10px] text-muted-foreground">{title.views} views</p>
                 </div>
               </Link>
             ))}

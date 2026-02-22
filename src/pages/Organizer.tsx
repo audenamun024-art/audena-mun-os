@@ -32,9 +32,11 @@ const Organizer = () => {
             <Link to="/" className="font-serif text-xl font-bold text-gold-light tracking-wide">AudenaMUN</Link>
             <span className="ml-3 text-xs bg-accent/20 text-gold-light px-2 py-0.5 rounded-full">Organizer</span>
           </div>
-          <Button size="sm" className="bg-accent text-accent-foreground hover:bg-gold-dark text-xs">
-            <Plus className="h-4 w-4 mr-1" /> Create Event
-          </Button>
+          <Link to="/events/create">
+            <Button size="sm" className="bg-accent text-accent-foreground hover:bg-gold-dark text-xs">
+              <Plus className="h-4 w-4 mr-1" /> Create Event
+            </Button>
+          </Link>
         </div>
       </header>
 

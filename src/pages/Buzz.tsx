@@ -1,6 +1,7 @@
 import AppLayout from "@/components/layout/AppLayout";
 import { Heart, MessageCircle, Eye, Play } from "lucide-react";
 import { useState } from "react";
+import buzzImg from "@/assets/buzz-placeholder.jpg";
 
 const categories = ["All", "Best Speech", "Crisis Reaction", "Debate Moment", "Award"];
 
@@ -15,7 +16,6 @@ const videos = [
 
 const Buzz = () => {
   const [activeCategory, setActiveCategory] = useState("All");
-
   const filtered = activeCategory === "All" ? videos : videos.filter((v) => v.category === activeCategory);
 
   return (
@@ -50,9 +50,13 @@ const Buzz = () => {
               key={video.id}
               className="bg-card rounded-xl border border-border overflow-hidden shadow-card hover:shadow-elevated transition-shadow"
             >
-              <div className="bg-navy-gradient h-48 flex items-center justify-center relative">
-                <div className="w-14 h-14 rounded-full bg-gold/20 flex items-center justify-center border-2 border-gold/40 cursor-pointer hover:bg-gold/30 transition-colors">
-                  <Play className="h-6 w-6 text-gold-light ml-0.5" />
+              <div className="relative h-48">
+                <img src={buzzImg} alt={video.title} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-navy-dark/30" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-full bg-gold/20 flex items-center justify-center border-2 border-gold/40 cursor-pointer hover:bg-gold/30 transition-colors backdrop-blur-sm">
+                    <Play className="h-6 w-6 text-gold-light ml-0.5" />
+                  </div>
                 </div>
                 {video.featured && (
                   <span className="absolute top-3 left-3 bg-accent text-accent-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
