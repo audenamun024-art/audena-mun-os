@@ -1,104 +1,92 @@
 import { useParams, Link } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
-import {
-  Calendar, MapPin, Users, DollarSign, Clock, ChevronRight, Share2
-} from "lucide-react";
+import { Calendar, MapPin, Users, DollarSign, Clock, Share2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import eventImg1 from "@/assets/event-placeholder-1.jpg";
 import eventImg2 from "@/assets/event-placeholder-2.jpg";
 
-const eventsData: Record<string, {
-  title: string; date: string; location: string; delegates: number;
-  fee: string; platformFee: number; committees: { name: string; agenda: string; capacity: number }[];
-  description: string; deadline: string; status: string; bannerIdx: number;
-}> = {
+const bannerImages = [eventImg1, eventImg2];
+
+const fallbackEvents: Record<string, any> = {
   "1": {
-    title: "Delhi International MUN 2026",
-    date: "Mar 15–17, 2026",
-    location: "New Delhi",
-    delegates: 450,
-    fee: "₹1,200",
-    platformFee: 25,
-    deadline: "Mar 10, 2026",
-    status: "Open",
-    bannerIdx: 0,
-    description: "Join India's most prestigious Model United Nations conference featuring 12 committees, expert chairs, and delegates from across the nation. Three days of intense debate, diplomacy, and networking.",
+    title: "Delhi International MUN 2026", start_date: "2026-03-15", end_date: "2026-03-17",
+    location: "New Delhi", registration_fee: 1200, platform_fee: 25,
+    registration_deadline: "2026-03-10", status: "open",
+    description: "Join India's most prestigious Model United Nations conference featuring 12 committees.",
     committees: [
-      { name: "UNSC", agenda: "Addressing Nuclear Proliferation in the Middle East", capacity: 40 },
-      { name: "DISEC", agenda: "Regulating Autonomous Weapons Systems", capacity: 50 },
-      { name: "WHO", agenda: "Global Pandemic Preparedness Framework", capacity: 45 },
-      { name: "UNHRC", agenda: "Protection of Digital Privacy Rights", capacity: 40 },
-      { name: "ECOSOC", agenda: "Sustainable Development in Post-Conflict Zones", capacity: 35 },
-      { name: "UNEP", agenda: "Carbon Credit Markets and Climate Justice", capacity: 35 },
+      { name: "UNSC", agenda: "Addressing Nuclear Proliferation", capacity: 40 },
+      { name: "DISEC", agenda: "Regulating Autonomous Weapons", capacity: 50 },
+      { name: "WHO", agenda: "Global Pandemic Preparedness", capacity: 45 },
     ],
   },
   "2": {
-    title: "Mumbai Model United Nations",
-    date: "Apr 5–7, 2026",
-    location: "Mumbai",
-    delegates: 320,
-    fee: "₹800",
-    platformFee: 25,
-    deadline: "Mar 30, 2026",
-    status: "Open",
-    bannerIdx: 1,
-    description: "Mumbai's flagship MUN conference returns with expanded committees and an all-new crisis simulation module. Perfect for both beginners and experienced delegates.",
+    title: "Mumbai Model United Nations", start_date: "2026-04-05", end_date: "2026-04-07",
+    location: "Mumbai", registration_fee: 800, platform_fee: 25,
+    registration_deadline: "2026-03-30", status: "open",
+    description: "Mumbai's flagship MUN conference with expanded committees.",
     committees: [
-      { name: "UNSC", agenda: "Conflict Resolution in the South China Sea", capacity: 35 },
-      { name: "UNGA", agenda: "Reform of International Financial Institutions", capacity: 60 },
-      { name: "WHO", agenda: "Mental Health Infrastructure in Developing Nations", capacity: 40 },
-      { name: "AIPPM", agenda: "National Education Policy Reform", capacity: 50 },
+      { name: "UNSC", agenda: "Conflict in South China Sea", capacity: 35 },
+      { name: "UNGA", agenda: "Reform of Financial Institutions", capacity: 60 },
     ],
   },
 };
 
-// Fallback for slug-based or numeric IDs
-const getEvent = (id: string) => {
-  if (eventsData[id]) return eventsData[id];
-  // Check by slug
-  for (const key of Object.keys(eventsData)) {
-    const slug = eventsData[key].title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    if (slug === id) return eventsData[key];
-  }
-  return eventsData["1"]; // fallback
-};
-
-const bannerImages = [eventImg1, eventImg2];
-
 const EventDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const event = getEvent(id || "1");
+  const [event, setEvent] = useState<any>(null);
+  const [committees, setCommittees] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetch = async () => {
+      const { data: ev } = await supabase.from("events").select("*").eq("id", id).single();
+      if (ev) {
+        setEvent(ev);
+        const { data: comms } = await supabase.from("committees").select("*").eq("event_id", id);
+        setCommittees(comms || []);
+      } else {
+        // Fallback
+        const fb = fallbackEvents[id || "1"] || fallbackEvents["1"];
+        setEvent(fb);
+        setCommittees(fb.committees || []);
+      }
+    };
+    fetch();
+  }, [id]);
+
+  if (!event) return <AppLayout><div className="p-8 text-center text-muted-foreground">Loading...</div></AppLayout>;
+
+  const fee = event.registration_fee || 0;
+  const platformFee = event.platform_fee || 25;
 
   return (
     <AppLayout>
       <div className="space-y-4">
         {/* Banner */}
         <div className="relative h-52 overflow-hidden">
-          <img
-            src={bannerImages[event.bannerIdx % bannerImages.length]}
-            alt={event.title}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-navy-dark/90 via-navy-dark/40 to-transparent" />
+          <img src={event.banner_url || bannerImages[0]} alt={event.title} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
           <div className="absolute bottom-4 left-4 right-4">
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full mb-2 inline-block ${
-              event.status === "Open" ? "bg-green-500/20 text-green-300" : "bg-accent/20 text-gold-light"
+            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full mb-2 inline-block capitalize ${
+              event.status === "open" ? "bg-green-500/20 text-green-400" : "bg-secondary text-muted-foreground"
             }`}>
               {event.status}
             </span>
-            <h1 className="text-xl font-serif font-bold text-gold-light">{event.title}</h1>
+            <h1 className="text-xl font-serif font-bold text-foreground">{event.title}</h1>
           </div>
         </div>
 
         {/* Quick Info */}
-        <div className="px-4 grid grid-cols-2 gap-3">
+        <div className="px-4 grid grid-cols-2 gap-2">
           {[
-            { icon: Calendar, label: event.date },
+            { icon: Calendar, label: `${event.start_date} – ${event.end_date}` },
             { icon: MapPin, label: event.location },
-            { icon: Users, label: `${event.delegates} delegates` },
-            { icon: Clock, label: `Deadline: ${event.deadline}` },
+            { icon: DollarSign, label: `₹${fee} + ₹${platformFee}` },
+            { icon: Clock, label: `Deadline: ${event.registration_deadline || "TBA"}` },
           ].map((item, i) => (
-            <div key={i} className="flex items-center gap-2 bg-card rounded-lg border border-border p-3 shadow-card">
+            <div key={i} className="flex items-center gap-2 bg-card rounded-xl border border-border p-3">
               <item.icon className="h-4 w-4 text-accent shrink-0" />
               <span className="text-xs text-foreground">{item.label}</span>
             </div>
@@ -107,48 +95,42 @@ const EventDetail = () => {
 
         {/* Description */}
         <section className="px-4">
-          <div className="bg-card rounded-xl border border-border p-4 shadow-card">
+          <div className="bg-card rounded-xl border border-border p-4">
             <h2 className="font-serif text-base font-bold text-foreground mb-2">About</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">{event.description}</p>
           </div>
         </section>
 
         {/* Committees */}
-        <section className="px-4">
-          <div className="bg-card rounded-xl border border-border p-4 shadow-card">
-            <h2 className="font-serif text-base font-bold text-foreground mb-3">Committees</h2>
-            <div className="space-y-2">
-              {event.committees.map((c, i) => (
-                <div key={i} className="bg-muted/50 rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-semibold text-sm text-foreground">{c.name}</h3>
-                    <span className="text-xs text-muted-foreground">{c.capacity} seats</span>
+        {committees.length > 0 && (
+          <section className="px-4">
+            <div className="bg-card rounded-xl border border-border p-4">
+              <h2 className="font-serif text-base font-bold text-foreground mb-3">Committees</h2>
+              <div className="space-y-2">
+                {committees.map((c: any, i: number) => (
+                  <div key={i} className="bg-secondary rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-semibold text-sm text-foreground">{c.name}</h3>
+                      <span className="text-xs text-muted-foreground">{c.capacity} seats</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{c.agenda}</p>
                   </div>
-                  <p className="text-xs text-muted-foreground">{c.agenda}</p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Fee Breakdown */}
         <section className="px-4">
-          <div className="bg-card rounded-xl border border-border p-4 shadow-card">
+          <div className="bg-card rounded-xl border border-border p-4">
             <h2 className="font-serif text-base font-bold text-foreground mb-3">Fee Breakdown</h2>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Registration Fee</span>
-                <span className="font-medium text-foreground">{event.fee}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Platform Fee</span>
-                <span className="font-medium text-foreground">₹{event.platformFee}</span>
-              </div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Registration</span><span className="text-foreground">₹{fee}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Platform Fee</span><span className="text-foreground">₹{platformFee}</span></div>
               <div className="flex justify-between border-t border-border pt-2">
                 <span className="font-semibold text-foreground">Total</span>
-                <span className="font-bold text-accent">
-                  ₹{parseInt(event.fee.replace(/[^\d]/g, "")) + event.platformFee}
-                </span>
+                <span className="font-bold text-accent">₹{fee + platformFee}</span>
               </div>
             </div>
           </div>
@@ -161,9 +143,9 @@ const EventDetail = () => {
               Register Now
             </Button>
           </Link>
-          <Button variant="outline" size="icon" onClick={() => {
+          <Button variant="outline" size="icon" className="border-border" onClick={() => {
             navigator.clipboard.writeText(window.location.href);
-            import("sonner").then(({ toast }) => toast.success("Link copied!"));
+            toast.success("Link copied!");
           }}>
             <Share2 className="h-4 w-4" />
           </Button>

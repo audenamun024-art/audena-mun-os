@@ -1,64 +1,94 @@
-import { useState } from "react";
-import { Search, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, X, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
 
 const tabs = ["Events", "Delegates", "Institutions"];
-
-const mockResults: Record<string, { title: string; subtitle: string }[]> = {
-  Events: [
-    { title: "Delhi MUN 2026", subtitle: "Mar 15–17 · New Delhi" },
-    { title: "Mumbai Model UN", subtitle: "Apr 5–7 · Mumbai" },
-    { title: "National Youth MUN", subtitle: "May 1–3 · Bangalore" },
-  ],
-  Delegates: [
-    { title: "Arjun Mehta", subtitle: "St. Xavier's College · 340 pts" },
-    { title: "Priya Sharma", subtitle: "Lady Shri Ram · 290 pts" },
-    { title: "Rohan Kapoor", subtitle: "Hindu College · 270 pts" },
-  ],
-  Institutions: [
-    { title: "St. Xavier's College", subtitle: "Mumbai · 45 delegates" },
-    { title: "Lady Shri Ram College", subtitle: "New Delhi · 38 delegates" },
-    { title: "Hindu College", subtitle: "New Delhi · 32 delegates" },
-  ],
-};
 
 const SearchModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const [activeTab, setActiveTab] = useState("Events");
   const [query, setQuery] = useState("");
+  const [results, setResults] = useState<{ title: string; subtitle: string }[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    const timer = setTimeout(async () => {
+      if (!query.trim()) {
+        setResults([]);
+        return;
+      }
+      if (activeTab === "Events") {
+        const { data } = await supabase
+          .from("events")
+          .select("title, location, start_date")
+          .ilike("title", `%${query}%`)
+          .limit(10);
+        setResults(
+          (data || []).map((e) => ({
+            title: e.title,
+            subtitle: `${e.location || ""} · ${e.start_date || ""}`,
+          }))
+        );
+      } else if (activeTab === "Delegates") {
+        const { data } = await supabase
+          .from("profiles")
+          .select("full_name, institution, rank_points")
+          .ilike("full_name", `%${query}%`)
+          .limit(10);
+        setResults(
+          (data || []).map((p) => ({
+            title: p.full_name || "Unknown",
+            subtitle: `${p.institution || ""} · ${p.rank_points || 0} pts`,
+          }))
+        );
+      } else {
+        const { data } = await supabase
+          .from("organizers")
+          .select("institution_name, location")
+          .ilike("institution_name", `%${query}%`)
+          .limit(10);
+        setResults(
+          (data || []).map((o) => ({
+            title: o.institution_name,
+            subtitle: o.location || "",
+          }))
+        );
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query, activeTab, open]);
 
   if (!open) return null;
 
-  const filtered = mockResults[activeTab]?.filter(
-    (r) =>
-      r.title.toLowerCase().includes(query.toLowerCase()) ||
-      r.subtitle.toLowerCase().includes(query.toLowerCase())
-  );
-
   return (
     <div className="fixed inset-0 z-[100] bg-background animate-fade-in">
-      <div className="flex items-center gap-3 px-4 h-14 border-b border-border">
-        <Search className="h-5 w-5 text-muted-foreground shrink-0" />
+      <div className="flex items-center gap-3 px-4 h-12 border-b border-border">
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-5 w-5" />
+        </button>
         <Input
           autoFocus
-          placeholder="Search events, delegates, institutions..."
+          placeholder="Search..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="border-0 bg-transparent focus-visible:ring-0 text-base"
+          className="border-0 bg-transparent focus-visible:ring-0 text-base placeholder:text-muted-foreground"
         />
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-          <X className="h-5 w-5" />
-        </button>
+        {query && (
+          <button onClick={() => setQuery("")} className="text-muted-foreground hover:text-foreground">
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
-      <div className="flex gap-2 px-4 py-3 border-b border-border">
+      <div className="flex gap-1 px-4 py-2 border-b border-border">
         {tabs.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+            className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
               activeTab === tab
                 ? "bg-accent text-accent-foreground"
-                : "bg-muted text-muted-foreground hover:bg-secondary"
+                : "bg-secondary text-muted-foreground hover:text-foreground"
             }`}
           >
             {tab}
@@ -66,19 +96,22 @@ const SearchModal = ({ open, onClose }: { open: boolean; onClose: () => void }) 
         ))}
       </div>
 
-      <div className="p-4 space-y-2">
-        {filtered?.map((result, i) => (
+      <div className="p-4 space-y-1">
+        {results.length === 0 && query && (
+          <p className="text-center text-muted-foreground py-12 text-sm">No results found</p>
+        )}
+        {results.length === 0 && !query && (
+          <p className="text-center text-muted-foreground py-12 text-sm">Start typing to search...</p>
+        )}
+        {results.map((result, i) => (
           <div
             key={i}
-            className="p-3 rounded-lg bg-card border border-border hover:shadow-card transition-shadow cursor-pointer"
+            className="p-3 rounded-xl bg-card border border-border hover:border-accent/30 transition-colors cursor-pointer"
           >
-            <p className="font-medium text-foreground">{result.title}</p>
-            <p className="text-sm text-muted-foreground">{result.subtitle}</p>
+            <p className="font-medium text-sm text-foreground">{result.title}</p>
+            <p className="text-xs text-muted-foreground">{result.subtitle}</p>
           </div>
         ))}
-        {filtered?.length === 0 && (
-          <p className="text-center text-muted-foreground py-8">No results found</p>
-        )}
       </div>
     </div>
   );
