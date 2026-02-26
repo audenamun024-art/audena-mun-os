@@ -49,6 +49,44 @@ export type Database = {
           },
         ]
       }
+      eb_access: {
+        Row: {
+          active: boolean
+          event_id: string
+          granted_at: string
+          granted_by: string
+          id: string
+          revoked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          event_id: string
+          granted_at?: string
+          granted_by: string
+          id?: string
+          revoked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          event_id?: string
+          granted_at?: string
+          granted_by?: string
+          id?: string
+          revoked_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eb_access_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           banner_url: string | null
@@ -182,6 +220,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_type: string
           avatar_url: string | null
           awards_won: number | null
           bio: string | null
@@ -196,6 +235,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_type?: string
           avatar_url?: string | null
           awards_won?: number | null
           bio?: string | null
@@ -210,6 +250,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_type?: string
           avatar_url?: string | null
           awards_won?: number | null
           bio?: string | null
@@ -364,6 +405,48 @@ export type Database = {
           },
         ]
       }
+      task_completions: {
+        Row: {
+          completed_at: string
+          id: string
+          points_awarded: number
+          task_id: string
+          user_id: string
+          video_id: string | null
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          points_awarded?: number
+          task_id: string
+          user_id: string
+          video_id?: string | null
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          points_awarded?: number
+          task_id?: string
+          user_id?: string
+          video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_completions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "user_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_completions_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: number
@@ -430,6 +513,36 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_tasks: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          description: string
+          id: string
+          points: number
+          title: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          points?: number
+          title: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          points?: number
+          title?: string
         }
         Relationships: []
       }

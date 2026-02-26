@@ -1,12 +1,11 @@
 import { Link } from "react-router-dom";
-import { X, Home, CalendarDays, Film, Trophy, User, Shield, Settings, LogIn, Flame, AlertTriangle, Building2, Globe } from "lucide-react";
+import { X, Home, CalendarDays, Film, Trophy, User, Shield, Settings, LogIn, AlertTriangle, Building2, Globe } from "lucide-react";
 
 const menuItems = [
   { path: "/", label: "Home", icon: Home },
   { path: "/events", label: "Events", icon: CalendarDays },
   { path: "/buzz", label: "Buzz", icon: Film },
   { path: "/rankboard", label: "Rankboard", icon: Trophy },
-  { path: "/resolution-battles", label: "Resolution Battles", icon: Flame },
   { path: "/crisis", label: "Crisis Mode", icon: AlertTriangle },
   { path: "/research", label: "Research Browser", icon: Globe },
   { path: "/profile", label: "Profile", icon: User },
