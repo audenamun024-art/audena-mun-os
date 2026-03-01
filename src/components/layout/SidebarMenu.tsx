@@ -1,16 +1,16 @@
 import { Link } from "react-router-dom";
-import { X, Home, CalendarDays, Film, Trophy, User, Shield, Settings, LogIn, AlertTriangle, Building2, Globe } from "lucide-react";
+import { X, Home, Calendar, Play, Trophy, User, Shield, Gavel, LogIn, AlertTriangle, Building2, Globe, Award } from "lucide-react";
 
 const menuItems = [
   { path: "/", label: "Home", icon: Home },
-  { path: "/events", label: "Events", icon: CalendarDays },
-  { path: "/buzz", label: "Buzz", icon: Film },
+  { path: "/events", label: "Events", icon: Calendar },
+  { path: "/buzz", label: "Buzz", icon: Play },
   { path: "/rankboard", label: "Rankboard", icon: Trophy },
   { path: "/crisis", label: "Crisis Mode", icon: AlertTriangle },
   { path: "/research", label: "Research Browser", icon: Globe },
   { path: "/profile", label: "Profile", icon: User },
   { path: "/admin", label: "Admin Dashboard", icon: Shield },
-  { path: "/organizer", label: "Organizer Dashboard", icon: Settings },
+  { path: "/organizer", label: "Organizer Dashboard", icon: Gavel },
   { path: "/organizer/register", label: "Become an Organizer", icon: Building2 },
   { path: "/auth", label: "Sign In", icon: LogIn },
 ];

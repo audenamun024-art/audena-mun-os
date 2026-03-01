@@ -5,7 +5,38 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { User, Building2, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { User, Building2, ArrowRight, Eye, EyeOff, Shield, Gavel, Users, Award } from "lucide-react";
+
+const TEST_ACCOUNTS = [
+  {
+    role: "Delegate",
+    icon: User,
+    email: "delegate@audena.test",
+    password: "delegate123",
+    description: "Browse events, register, earn points",
+  },
+  {
+    role: "Organizer",
+    icon: Gavel,
+    email: "organizer@audena.test",
+    password: "organizer123",
+    description: "Create events, manage registrations",
+  },
+  {
+    role: "Admin",
+    icon: Shield,
+    email: "admin@audena.test",
+    password: "admin123",
+    description: "Platform oversight, approvals",
+  },
+  {
+    role: "EB Member",
+    icon: Award,
+    email: "eb@audena.test",
+    password: "eb123456",
+    description: "Crisis mode, event management",
+  },
+];
 
 const Auth = () => {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -42,10 +73,7 @@ const Auth = () => {
           },
         });
         if (error) throw error;
-
         toast.success("Account created! Check your email to verify.");
-
-        // If org, redirect to org registration after signup
         if (accountType === "organisation") {
           toast.info("Complete your organisation verification next.");
         }
@@ -55,6 +83,52 @@ const Auth = () => {
         toast.success("Welcome back!");
         navigate("/");
       }
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQuickLogin = async (testEmail: string, testPassword: string, role: string) => {
+    setLoading(true);
+    try {
+      // First try to sign in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: testEmail,
+        password: testPassword,
+      });
+
+      if (signInError) {
+        // If user doesn't exist, create account
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: testEmail,
+          password: testPassword,
+          options: {
+            data: { full_name: `Test ${role}`, account_type: "personal" },
+          },
+        });
+        if (signUpError) throw signUpError;
+
+        // Try sign in again
+        const { error: retryError } = await supabase.auth.signInWithPassword({
+          email: testEmail,
+          password: testPassword,
+        });
+        if (retryError) {
+          toast.info(`Account created for ${role}. Check email to verify, then sign in.`);
+          setLoading(false);
+          return;
+        }
+      }
+
+      toast.success(`Signed in as ${role}`);
+
+      // Route based on role
+      if (role === "Admin") navigate("/admin");
+      else if (role === "Organizer") navigate("/organizer");
+      else if (role === "EB Member") navigate("/crisis");
+      else navigate("/");
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -88,6 +162,34 @@ const Auth = () => {
               </button>
             ))}
           </div>
+
+          {/* Quick Login - Test Accounts (Login mode only) */}
+          {mode === "login" && (
+            <div className="mb-5 animate-fade-in">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-3 text-center">Quick Access — Test Roles</p>
+              <div className="grid grid-cols-2 gap-2">
+                {TEST_ACCOUNTS.map((acc) => (
+                  <button
+                    key={acc.role}
+                    onClick={() => handleQuickLogin(acc.email, acc.password, acc.role)}
+                    disabled={loading}
+                    className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border bg-secondary hover:border-accent/40 hover:bg-secondary/80 transition-all group"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+                      <acc.icon className="h-4.5 w-4.5 text-accent" />
+                    </div>
+                    <span className="text-xs font-semibold text-foreground">{acc.role}</span>
+                    <span className="text-[9px] text-muted-foreground leading-tight text-center">{acc.description}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-3 my-4">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-[10px] text-muted-foreground">or sign in manually</span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+            </div>
+          )}
 
           {/* Account Type Selection (Sign Up only) */}
           {mode === "signup" && !accountType && (
@@ -133,8 +235,8 @@ const Auth = () => {
                   >
                     ← Change type
                   </button>
-                  <span className="text-[10px] bg-accent/15 text-accent px-2 py-0.5 rounded-full font-medium capitalize">
-                    {accountType === "personal" ? "👤 Personal" : "🏛 Organisation"}
+                  <span className="text-[10px] bg-accent/15 text-accent px-2 py-0.5 rounded-full font-medium">
+                    {accountType === "personal" ? "Delegate" : "Organisation"}
                   </span>
                 </div>
               )}

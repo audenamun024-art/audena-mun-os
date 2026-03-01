@@ -1,5 +1,5 @@
 import AppLayout from "@/components/layout/AppLayout";
-import { Calendar, Users, Trophy, ChevronRight, MapPin, Play, TrendingUp, Sparkles } from "lucide-react";
+import { Calendar, Users, Trophy, ChevronRight, MapPin, Play, Gavel, Globe, BookOpen, Shield, Award } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,18 +14,31 @@ const Index = () => {
   const [events, setEvents] = useState<any[]>([]);
   const [topDelegates, setTopDelegates] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
+  const [stats, setStats] = useState({ events: 0, delegates: 0, awards: 0 });
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
-    supabase.from("events").select("*").eq("status", "open").limit(6).then(({ data }) => {
+
+    // Fetch real stats
+    Promise.all([
+      supabase.from("events").select("*", { count: "exact", head: true }),
+      supabase.from("profiles").select("*", { count: "exact", head: true }),
+      supabase.from("registrations").select("*", { count: "exact", head: true }).eq("status", "approved"),
+    ]).then(([evRes, profRes, regRes]) => {
+      setStats({
+        events: evRes.count || 0,
+        delegates: profRes.count || 0,
+        awards: regRes.count || 0,
+      });
+    });
+
+    supabase.from("events").select("*").eq("status", "open").order("created_at", { ascending: false }).limit(6).then(({ data }) => {
       if (data) setEvents(data);
     });
     supabase.from("profiles").select("*").order("rank_points", { ascending: false }).limit(3).then(({ data }) => {
       if (data) setTopDelegates(data);
     });
   }, []);
-
-  const medals = ["🥇", "🥈", "🥉"];
 
   const displayEvents = events.length > 0 ? events : [
     { id: "1", title: "Delhi International MUN 2026", start_date: "2026-03-15", location: "New Delhi", registration_fee: 1200 },
@@ -39,12 +52,14 @@ const Index = () => {
     { full_name: "Rohan Kapoor", institution: "Hindu College", rank_points: 270 },
   ];
 
+  const medals = ["🥇", "🥈", "🥉"];
+
   return (
     <AppLayout>
       <div className="space-y-5">
         {/* Hero */}
         <section className="relative h-80 overflow-hidden">
-          <img src={heroBanner} alt="AudenaMUN" className="w-full h-full object-cover" />
+          <img src={heroBanner} alt="AudenaMUN Conference" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 px-5 pb-6">
             <p className="text-[10px] tracking-[0.3em] uppercase text-accent font-medium mb-2">Welcome to</p>
@@ -56,9 +71,9 @@ const Index = () => {
             </p>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { icon: Calendar, label: "Events", value: "24+" },
-                { icon: Users, label: "Delegates", value: "3.2K" },
-                { icon: Trophy, label: "Awards", value: "180" },
+                { icon: Calendar, label: "Events", value: stats.events || "24+" },
+                { icon: Users, label: "Delegates", value: stats.delegates || "3.2K" },
+                { icon: Trophy, label: "Registrations", value: stats.awards || "180" },
               ].map((stat) => (
                 <div key={stat.label} className="glass-card rounded-xl p-3 text-center">
                   <stat.icon className="h-4 w-4 text-accent mx-auto mb-1" />
@@ -70,19 +85,21 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Stories-like quick actions */}
+        {/* Quick Actions */}
         <section className="px-4">
           <div className="flex gap-3 overflow-x-auto pb-1">
             {[
-              { label: "Events", path: "/events", emoji: "🏛" },
-              { label: "Buzz", path: "/buzz", emoji: "🎬" },
-              { label: "Ranks", path: "/rankboard", emoji: "🏆" },
-              { label: "Research", path: "/research", emoji: "🔍" },
-              ...(user ? [{ label: "Profile", path: "/profile", emoji: "👤" }] : [{ label: "Join", path: "/auth", emoji: "✨" }]),
+              { label: "Events", path: "/events", icon: Calendar },
+              { label: "Buzz", path: "/buzz", icon: Play },
+              { label: "Ranks", path: "/rankboard", icon: Trophy },
+              { label: "Research", path: "/research", icon: Globe },
+              { label: "Admin", path: "/admin", icon: Shield },
+              { label: "Organizer", path: "/organizer", icon: Gavel },
+              ...(user ? [{ label: "Profile", path: "/profile", icon: Users }] : [{ label: "Join", path: "/auth", icon: Award }]),
             ].map((item) => (
               <Link key={item.label} to={item.path} className="flex flex-col items-center gap-1 min-w-[60px]">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-accent/30 to-accent/5 border-2 border-accent/40 flex items-center justify-center text-xl hover:scale-105 transition-transform">
-                  {item.emoji}
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-accent/30 to-accent/5 border-2 border-accent/40 flex items-center justify-center hover:scale-105 transition-transform">
+                  <item.icon className="h-5 w-5 text-accent" />
                 </div>
                 <span className="text-[10px] text-muted-foreground font-medium">{item.label}</span>
               </Link>
@@ -90,7 +107,7 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Featured Events - Instagram card style */}
+        {/* Featured Events */}
         <section className="px-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-base font-serif font-bold text-foreground">Upcoming Events</h2>
