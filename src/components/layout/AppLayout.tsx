@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, Search, X, Home, CalendarDays, Film, Trophy, User } from "lucide-react";
+import { Menu, Search, Home, Calendar, Play, Trophy, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SearchModal from "./SearchModal";
 import SidebarMenu from "./SidebarMenu";
@@ -12,15 +12,14 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
   const navItems = [
     { path: "/", label: "Home", icon: Home },
-    { path: "/events", label: "Events", icon: CalendarDays },
-    { path: "/buzz", label: "Buzz", icon: Film },
+    { path: "/events", label: "Events", icon: Calendar },
+    { path: "/buzz", label: "Buzz", icon: Play },
     { path: "/rankboard", label: "Ranks", icon: Trophy },
     { path: "/profile", label: "Profile", icon: User },
   ];
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
         <div className="flex items-center justify-between px-4 h-12">
           <Button
@@ -47,12 +46,10 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="flex-1 pb-16">
         {children}
       </main>
 
-      {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-xl border-t border-border">
         <div className="flex items-center justify-around h-14 max-w-lg mx-auto">
           {navItems.map((item) => {
@@ -63,9 +60,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
                 key={item.path}
                 to={item.path}
                 className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-all duration-200 ${
-                  isActive
-                    ? "text-accent"
-                    : "text-muted-foreground hover:text-foreground"
+                  isActive ? "text-accent" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <Icon className={`h-5 w-5 ${isActive ? "drop-shadow-[0_0_6px_hsl(43,55%,54%)]" : ""}`} />
@@ -76,7 +71,6 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </nav>
 
-      {/* Modals */}
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
       <SidebarMenu open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
     </div>

@@ -1,6 +1,8 @@
 import AppLayout from "@/components/layout/AppLayout";
-import { Trophy, Edit, Settings, LogOut, CheckCircle2, Circle, Video, Sparkles, ChevronRight } from "lucide-react";
+import { Trophy, Edit, Settings, LogOut, CheckCircle2, Circle, Play, Award, ChevronRight, Calendar, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +15,8 @@ const Profile = () => {
   const [tasks, setTasks] = useState<any[]>([]);
   const [completions, setCompletions] = useState<any[]>([]);
   const [registrations, setRegistrations] = useState<any[]>([]);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ full_name: "", institution: "", bio: "", phone: "" });
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -24,16 +28,33 @@ const Profile = () => {
         supabase.from("profiles").select("*").eq("user_id", user.id).single(),
         supabase.from("user_tasks").select("*").eq("active", true),
         supabase.from("task_completions").select("*").eq("user_id", user.id),
-        supabase.from("registrations").select("*, events(title, start_date)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
+        supabase.from("registrations").select("*, events(title, start_date)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),
       ]);
 
-      if (profileRes.data) setProfile(profileRes.data);
+      if (profileRes.data) {
+        setProfile(profileRes.data);
+        setEditForm({
+          full_name: profileRes.data.full_name || "",
+          institution: profileRes.data.institution || "",
+          bio: profileRes.data.bio || "",
+          phone: profileRes.data.phone || "",
+        });
+      }
       if (tasksRes.data) setTasks(tasksRes.data);
       if (completionsRes.data) setCompletions(completionsRes.data);
       if (regsRes.data) setRegistrations(regsRes.data);
     };
     fetchAll();
   }, []);
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    const { error } = await supabase.from("profiles").update(editForm).eq("user_id", user.id);
+    if (error) { toast.error(error.message); return; }
+    setProfile({ ...profile, ...editForm });
+    setEditing(false);
+    toast.success("Profile updated!");
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -61,7 +82,7 @@ const Profile = () => {
   return (
     <AppLayout>
       <div className="space-y-5">
-        {/* Profile Header - Instagram style */}
+        {/* Profile Header */}
         <div className="px-5 pt-6 pb-4">
           <div className="flex items-start gap-5">
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-accent/40 to-accent/10 border-2 border-accent/40 flex items-center justify-center shrink-0">
@@ -69,8 +90,9 @@ const Profile = () => {
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-lg font-serif font-bold text-foreground truncate">{displayProfile.full_name}</h1>
-              <p className="text-xs text-muted-foreground mb-3">{displayProfile.institution || "No institution set"}</p>
-              <div className="flex gap-6">
+              <p className="text-xs text-muted-foreground mb-1">{displayProfile.institution || "No institution set"}</p>
+              <span className="text-[10px] bg-accent/15 text-accent px-2 py-0.5 rounded-full font-medium capitalize">{displayProfile.account_type}</span>
+              <div className="flex gap-6 mt-3">
                 {[
                   { label: "MUNs", value: displayProfile.total_muns },
                   { label: "Awards", value: displayProfile.awards_won },
@@ -85,25 +107,50 @@ const Profile = () => {
             </div>
           </div>
 
-          {displayProfile.bio && (
+          {displayProfile.bio && !editing && (
             <p className="text-xs text-muted-foreground mt-3 leading-relaxed">{displayProfile.bio}</p>
           )}
 
-          <div className="flex gap-2 mt-4">
-            <Button className="flex-1 bg-accent text-accent-foreground hover:opacity-90 h-9" size="sm">
-              <Edit className="h-3.5 w-3.5 mr-1.5" /> Edit Profile
-            </Button>
-            <Button variant="outline" className="flex-1 border-border h-9" size="sm">
-              <Settings className="h-3.5 w-3.5 mr-1.5" /> Settings
-            </Button>
-          </div>
+          {!editing ? (
+            <div className="flex gap-2 mt-4">
+              <Button className="flex-1 bg-accent text-accent-foreground hover:opacity-90 h-9" size="sm" onClick={() => setEditing(true)}>
+                <Edit className="h-3.5 w-3.5 mr-1.5" /> Edit Profile
+              </Button>
+              <Button variant="outline" className="flex-1 border-border h-9" size="sm">
+                <Settings className="h-3.5 w-3.5 mr-1.5" /> Settings
+              </Button>
+            </div>
+          ) : (
+            <div className="mt-4 space-y-3 bg-card rounded-xl border border-border p-4">
+              <div>
+                <Label className="text-xs text-muted-foreground">Full Name</Label>
+                <Input value={editForm.full_name} onChange={e => setEditForm({ ...editForm, full_name: e.target.value })} className="mt-1 bg-secondary border-border h-9" />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Institution</Label>
+                <Input value={editForm.institution} onChange={e => setEditForm({ ...editForm, institution: e.target.value })} className="mt-1 bg-secondary border-border h-9" />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Bio</Label>
+                <Input value={editForm.bio} onChange={e => setEditForm({ ...editForm, bio: e.target.value })} className="mt-1 bg-secondary border-border h-9" />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Phone</Label>
+                <Input value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} className="mt-1 bg-secondary border-border h-9" />
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" className="bg-accent text-accent-foreground" onClick={handleSaveProfile}>Save</Button>
+                <Button size="sm" variant="outline" className="border-border" onClick={() => setEditing(false)}>Cancel</Button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Tasks Section - Engagement */}
+        {/* Tasks Section */}
         <section className="px-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-accent" />
+              <Award className="h-4 w-4 text-accent" />
               <h2 className="text-base font-serif font-bold text-foreground">Your Tasks</h2>
             </div>
             <span className="text-xs text-accent font-semibold">{totalPoints} pts earned</span>
@@ -116,9 +163,7 @@ const Profile = () => {
                 <div
                   key={task.id}
                   className={`flex items-center gap-3 p-3.5 rounded-xl border transition-colors ${
-                    completed
-                      ? "bg-accent/5 border-accent/20"
-                      : "bg-card border-border hover:border-accent/20"
+                    completed ? "bg-accent/5 border-accent/20" : "bg-card border-border hover:border-accent/20"
                   }`}
                 >
                   {completed ? (
@@ -127,9 +172,7 @@ const Profile = () => {
                     <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium ${completed ? "text-accent" : "text-foreground"}`}>
-                      {task.title}
-                    </p>
+                    <p className={`text-sm font-medium ${completed ? "text-accent" : "text-foreground"}`}>{task.title}</p>
                     <p className="text-[10px] text-muted-foreground">{task.description}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
@@ -137,7 +180,7 @@ const Profile = () => {
                     {!completed && (
                       <Link to="/buzz">
                         <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
-                          <Video className="h-3.5 w-3.5 text-accent" />
+                          <Play className="h-3.5 w-3.5 text-accent" />
                         </Button>
                       </Link>
                     )}
@@ -154,7 +197,10 @@ const Profile = () => {
         {/* Recent Registrations */}
         {registrations.length > 0 && (
           <section className="px-4">
-            <h2 className="text-base font-serif font-bold text-foreground mb-3">My Registrations</h2>
+            <div className="flex items-center gap-2 mb-3">
+              <Calendar className="h-4 w-4 text-accent" />
+              <h2 className="text-base font-serif font-bold text-foreground">My Registrations</h2>
+            </div>
             <div className="space-y-2">
               {registrations.map((reg: any) => (
                 <div key={reg.id} className="flex items-center justify-between p-3 bg-card rounded-xl border border-border">
@@ -185,9 +231,7 @@ const Profile = () => {
             </Button>
           ) : (
             <Link to="/auth">
-              <Button className="w-full bg-accent text-accent-foreground hover:opacity-90">
-                Sign In
-              </Button>
+              <Button className="w-full bg-accent text-accent-foreground hover:opacity-90">Sign In</Button>
             </Link>
           )}
         </div>
