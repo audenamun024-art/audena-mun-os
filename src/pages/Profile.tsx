@@ -116,7 +116,12 @@ const Profile = () => {
               <Button className="flex-1 bg-accent text-accent-foreground hover:opacity-90 h-9" size="sm" onClick={() => setEditing(true)}>
                 <Edit className="h-3.5 w-3.5 mr-1.5" /> Edit Profile
               </Button>
-              <Button variant="outline" className="flex-1 border-border h-9" size="sm">
+              <Button
+                variant="outline"
+                className="flex-1 border-border h-9"
+                size="sm"
+                onClick={() => toast.info("Use Edit Profile to update your account details")}
+              >
                 <Settings className="h-3.5 w-3.5 mr-1.5" /> Settings
               </Button>
             </div>

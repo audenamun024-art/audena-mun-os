@@ -1,21 +1,78 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { X, Home, Calendar, Play, Trophy, User, Shield, Gavel, LogIn, AlertTriangle, Building2, Globe, Award } from "lucide-react";
+import { X, Home, Calendar, Play, Trophy, User, Shield, Gavel, LogIn, AlertTriangle, Building2, Globe } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
-const menuItems = [
-  { path: "/", label: "Home", icon: Home },
-  { path: "/events", label: "Events", icon: Calendar },
-  { path: "/buzz", label: "Buzz", icon: Play },
-  { path: "/rankboard", label: "Rankboard", icon: Trophy },
-  { path: "/crisis", label: "Crisis Mode", icon: AlertTriangle },
-  { path: "/research", label: "Research Browser", icon: Globe },
-  { path: "/profile", label: "Profile", icon: User },
-  { path: "/admin", label: "Admin Dashboard", icon: Shield },
-  { path: "/organizer", label: "Organizer Dashboard", icon: Gavel },
-  { path: "/organizer/register", label: "Become an Organizer", icon: Building2 },
-  { path: "/auth", label: "Sign In", icon: LogIn },
-];
+type MenuItem = {
+  path: string;
+  label: string;
+  icon: any;
+};
 
 const SidebarMenu = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+  const [userId, setUserId] = useState<string | null>(null);
+  const [accountType, setAccountType] = useState<string>("personal");
+  const [roles, setRoles] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!open) return;
+
+    const fetchAccess = async () => {
+      const { data: authData } = await supabase.auth.getUser();
+      const currentUser = authData.user;
+      setUserId(currentUser?.id ?? null);
+
+      if (!currentUser) {
+        setRoles(new Set());
+        setAccountType("personal");
+        return;
+      }
+
+      const [{ data: roleRows }, { data: profileRow }] = await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", currentUser.id),
+        supabase.from("profiles").select("account_type").eq("user_id", currentUser.id).single(),
+      ]);
+
+      setRoles(new Set((roleRows || []).map((row: any) => row.role)));
+      setAccountType(profileRow?.account_type || "personal");
+    };
+
+    fetchAccess();
+  }, [open]);
+
+  const menuItems = useMemo<MenuItem[]>(() => {
+    const commonItems: MenuItem[] = [
+      { path: "/", label: "Home", icon: Home },
+      { path: "/events", label: "Events", icon: Calendar },
+      { path: "/buzz", label: "Buzz", icon: Play },
+      { path: "/rankboard", label: "Rankboard", icon: Trophy },
+      { path: "/research", label: "Research Browser", icon: Globe },
+      { path: "/profile", label: "Profile", icon: User },
+    ];
+
+    if (roles.has("eb")) {
+      commonItems.push({ path: "/crisis", label: "Crisis Mode", icon: AlertTriangle });
+    }
+
+    if (roles.has("admin")) {
+      commonItems.push({ path: "/admin", label: "Admin Dashboard", icon: Shield });
+    }
+
+    if (roles.has("organizer") || accountType === "organisation") {
+      commonItems.push({ path: "/organizer", label: "Organizer Dashboard", icon: Gavel });
+    }
+
+    if (userId && !roles.has("organizer") && accountType !== "organisation") {
+      commonItems.push({ path: "/organizer/register", label: "Become an Organizer", icon: Building2 });
+    }
+
+    if (!userId) {
+      commonItems.push({ path: "/auth", label: "Sign In", icon: LogIn });
+    }
+
+    return commonItems;
+  }, [accountType, roles, userId]);
+
   if (!open) return null;
 
   return (
@@ -52,3 +109,4 @@ const SidebarMenu = ({ open, onClose }: { open: boolean; onClose: () => void }) 
 };
 
 export default SidebarMenu;
+
