@@ -15,6 +15,7 @@ import Admin from "./pages/Admin";
 import Organizer from "./pages/Organizer";
 import OrganizerRegister from "./pages/OrganizerRegister";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import CrisisMode from "./pages/CrisisMode";
 import ResearchBrowser from "./pages/ResearchBrowser";
 import NotFound from "./pages/NotFound";
@@ -40,6 +41,7 @@ const App = () => (
           <Route path="/organizer" element={<Organizer />} />
           <Route path="/organizer/register" element={<OrganizerRegister />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/crisis" element={<CrisisMode />} />
           <Route path="/research" element={<ResearchBrowser />} />
           <Route path="*" element={<NotFound />} />
@@ -50,3 +52,4 @@ const App = () => (
 );
 
 export default App;
+
