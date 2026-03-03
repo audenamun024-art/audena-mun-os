@@ -25,7 +25,7 @@ const Profile = () => {
       setUser(user);
 
       const [profileRes, tasksRes, completionsRes, regsRes] = await Promise.all([
-        supabase.from("profiles").select("*").eq("user_id", user.id).single(),
+        supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
         supabase.from("user_tasks").select("*").eq("active", true),
         supabase.from("task_completions").select("*").eq("user_id", user.id),
         supabase.from("registrations").select("*, events(title, start_date)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),

@@ -61,7 +61,7 @@ const EventCreate = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error("Please sign in"); navigate("/auth"); return; }
 
-      const { data: org } = await supabase.from("organizers").select("id").eq("user_id", user.id).single();
+      const { data: org } = await supabase.from("organizers").select("id").eq("user_id", user.id).maybeSingle();
       if (!org) { toast.error("Register as organizer first"); navigate("/organizer/register"); return; }
 
       let bannerUrl = "";

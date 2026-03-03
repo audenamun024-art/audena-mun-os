@@ -23,7 +23,7 @@ const Organizer = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/auth"); return; }
 
-      const { data: org } = await supabase.from("organizers").select("*").eq("user_id", user.id).single();
+      const { data: org } = await supabase.from("organizers").select("*").eq("user_id", user.id).maybeSingle();
       if (!org) { navigate("/organizer/register"); return; }
       setOrgId(org.id);
 
@@ -64,7 +64,7 @@ const Organizer = () => {
 
   const handleGrantEB = async () => {
     if (!ebEmail || !ebEventId) { toast.error("Select event and enter delegate name"); return; }
-    const { data: profile } = await supabase.from("profiles").select("user_id").eq("full_name", ebEmail).single();
+    const { data: profile } = await supabase.from("profiles").select("user_id").eq("full_name", ebEmail).maybeSingle();
     if (!profile) { toast.error("User not found"); return; }
 
     const { data: { user } } = await supabase.auth.getUser();

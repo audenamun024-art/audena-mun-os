@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import buzzImg from "@/assets/buzz-placeholder.jpg";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import BuzzUploadModal from "@/components/buzz/BuzzUploadModal";
 
 const categories = ["All", "Best Speech", "Crisis Reaction", "Debate Moment", "Award"];
 
@@ -15,6 +16,7 @@ type CommentsByVideo = Record<string, any[]>;
 type NameLookup = Record<string, string>;
 
 const Buzz = () => {
+  const [showUpload, setShowUpload] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
   const [videos, setVideos] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
@@ -63,7 +65,7 @@ const Buzz = () => {
     }
 
     const { data: commentRows } = await supabase
-      .from("video_comments" as any)
+      .from("video_comments")
       .select("*")
       .in("video_id", videoIds)
       .order("created_at", { ascending: false });
@@ -91,8 +93,8 @@ const Buzz = () => {
       if (activeUser) {
         const [{ data: votes }, { data: bookmarks }, { data: selfProfile }] = await Promise.all([
           supabase.from("votes").select("target_id").eq("user_id", activeUser.id).eq("target_type", "video"),
-          supabase.from("video_bookmarks" as any).select("video_id").eq("user_id", activeUser.id),
-          supabase.from("profiles").select("full_name").eq("user_id", activeUser.id).single(),
+          supabase.from("video_bookmarks").select("video_id").eq("user_id", activeUser.id),
+          supabase.from("profiles").select("full_name").eq("user_id", activeUser.id).maybeSingle(),
         ]);
 
         if (votes) setUserVotes(new Set(votes.map((vote: any) => vote.target_id)));
@@ -149,7 +151,7 @@ const Buzz = () => {
 
     const alreadySaved = userBookmarks.has(videoId);
     if (alreadySaved) {
-      const { error } = await supabase.from("video_bookmarks" as any).delete().eq("user_id", user.id).eq("video_id", videoId);
+      const { error } = await supabase.from("video_bookmarks").delete().eq("user_id", user.id).eq("video_id", videoId);
       if (error) {
         toast.error(error.message);
         return;
@@ -163,7 +165,7 @@ const Buzz = () => {
       return;
     }
 
-    const { error } = await supabase.from("video_bookmarks" as any).insert({ user_id: user.id, video_id: videoId });
+    const { error } = await supabase.from("video_bookmarks").insert({ user_id: user.id, video_id: videoId });
     if (error) {
       toast.error(error.message);
       return;
@@ -183,7 +185,7 @@ const Buzz = () => {
     }
 
     const { data, error } = await supabase
-      .from("video_comments" as any)
+      .from("video_comments")
       .insert({
         video_id: videoId,
         user_id: user.id,
@@ -226,7 +228,7 @@ const Buzz = () => {
       toast.error("Please sign in to upload");
       return;
     }
-    toast.info("Upload module is queued next. Current feed actions are fully interactive.");
+    setShowUpload(true);
   };
 
   const currentComments = useMemo(() => {
@@ -384,6 +386,15 @@ const Buzz = () => {
           <div className="px-4 pb-6">
             <p className="text-xs text-muted-foreground">No comments yet on this reel.</p>
           </div>
+        )}
+
+        {user && (
+          <BuzzUploadModal
+            open={showUpload}
+            onClose={() => setShowUpload(false)}
+            onUploaded={() => fetchVideosAndComments()}
+            userId={user.id}
+          />
         )}
       </div>
     </AppLayout>

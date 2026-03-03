@@ -24,7 +24,7 @@ const EventRegister = () => {
 
   useEffect(() => {
     const fetch = async () => {
-      const { data: ev } = await supabase.from("events").select("*").eq("id", id).single();
+      const { data: ev } = await supabase.from("events").select("*").eq("id", id).maybeSingle();
       if (ev) {
         setEvent(ev);
         const { data: comms } = await supabase.from("committees").select("*").eq("event_id", id);

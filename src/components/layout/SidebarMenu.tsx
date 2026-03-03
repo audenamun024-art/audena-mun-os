@@ -30,7 +30,7 @@ const SidebarMenu = ({ open, onClose }: { open: boolean; onClose: () => void }) 
 
       const [{ data: roleRows }, { data: profileRow }] = await Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", currentUser.id),
-        supabase.from("profiles").select("account_type").eq("user_id", currentUser.id).single(),
+        supabase.from("profiles").select("account_type").eq("user_id", currentUser.id).maybeSingle(),
       ]);
 
       setRoles(new Set((roleRows || []).map((row: any) => row.role)));
