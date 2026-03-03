@@ -14,10 +14,23 @@ const Index = () => {
   const [events, setEvents] = useState<any[]>([]);
   const [topDelegates, setTopDelegates] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
+  const [roles, setRoles] = useState<Set<string>>(new Set());
+  const [accountType, setAccountType] = useState("personal");
   const [stats, setStats] = useState({ events: 0, delegates: 0, awards: 0 });
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+      if (data.user) {
+        Promise.all([
+          supabase.from("user_roles").select("role").eq("user_id", data.user.id),
+          supabase.from("profiles").select("account_type").eq("user_id", data.user.id).maybeSingle(),
+        ]).then(([{ data: roleRows }, { data: profileRow }]) => {
+          setRoles(new Set((roleRows || []).map((r: any) => r.role)));
+          setAccountType(profileRow?.account_type || "personal");
+        });
+      }
+    });
 
     // Fetch real stats
     Promise.all([
@@ -93,8 +106,8 @@ const Index = () => {
               { label: "Buzz", path: "/buzz", icon: Play },
               { label: "Ranks", path: "/rankboard", icon: Trophy },
               { label: "Research", path: "/research", icon: Globe },
-              { label: "Admin", path: "/admin", icon: Shield },
-              { label: "Organizer", path: "/organizer", icon: Gavel },
+              ...(roles.has("admin") ? [{ label: "Admin", path: "/admin", icon: Shield }] : []),
+              ...(roles.has("organizer") || accountType === "organisation" ? [{ label: "Organizer", path: "/organizer", icon: Gavel }] : []),
               ...(user ? [{ label: "Profile", path: "/profile", icon: Users }] : [{ label: "Join", path: "/auth", icon: Award }]),
             ].map((item) => (
               <Link key={item.label} to={item.path} className="flex flex-col items-center gap-1 min-w-[60px]">
