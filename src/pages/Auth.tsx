@@ -59,7 +59,7 @@ const Auth = () => {
   const routeAfterLogin = async (userId: string) => {
     const [{ data: roleRows }, { data: profileRow }] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", userId),
-      supabase.from("profiles").select("account_type").eq("user_id", userId).single(),
+      supabase.from("profiles").select("account_type").eq("user_id", userId).maybeSingle(),
     ]);
 
     const roles = new Set((roleRows || []).map((row: any) => row.role));
