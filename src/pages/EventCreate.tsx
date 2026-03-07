@@ -1,17 +1,20 @@
+import AppLayout from "@/components/layout/AppLayout";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar, MapPin, Plus, Trash2, Upload, ArrowLeft, DollarSign, Users } from "lucide-react";
+import { Calendar, MapPin, Plus, Trash2, Upload, DollarSign, Users } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Committee { name: string; agenda: string; capacity: number; }
 
 const EventCreate = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
@@ -40,7 +43,6 @@ const EventCreate = () => {
     if (committees.some((c) => !c.name)) { toast.error("All committees must have a name"); return; }
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error("Please sign in"); navigate("/auth"); return; }
       const { data: org } = await supabase.from("organizers").select("id").eq("user_id", user.id).maybeSingle();
       if (!org) { toast.error("Register as organizer first"); navigate("/organizer/register"); return; }
@@ -72,16 +74,18 @@ const EventCreate = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border px-4 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link to="/organizer"><Button size="sm" variant="ghost" className="h-8 w-8 p-0"><ArrowLeft className="h-4 w-4" /></Button></Link>
-          <h1 className="text-lg font-bold text-foreground">Create Event</h1>
-        </div>
-        <Button size="sm" onClick={handlePublish} disabled={loading} className="bg-gradient-primary text-primary-foreground text-xs">{loading ? "Publishing..." : "Publish"}</Button>
-      </header>
-
+    <AppLayout>
       <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Create Event</h1>
+            <p className="text-sm text-muted-foreground">Set up your MUN conference</p>
+          </div>
+          <Button size="sm" onClick={handlePublish} disabled={loading} className="bg-gradient-primary text-primary-foreground text-xs">
+            {loading ? "Publishing..." : "Publish"}
+          </Button>
+        </div>
+
         <section className="bg-card rounded-xl border border-border p-4 shadow-card">
           <Label className="text-xs text-muted-foreground mb-2 block">Event Banner</Label>
           <label className="cursor-pointer block">
@@ -140,7 +144,7 @@ const EventCreate = () => {
           <Button className="flex-1 bg-gradient-primary text-primary-foreground" onClick={handlePublish} disabled={loading}>{loading ? "Publishing..." : "Publish Event"}</Button>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 
