@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, Search, Home, Calendar, Play, Trophy, User, Bell } from "lucide-react";
+import { Menu, Search, Home, Calendar, Play, Trophy, User, Bell, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "next-themes";
 import SearchModal from "./SearchModal";
 import SidebarMenu from "./SidebarMenu";
 
@@ -9,6 +10,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const { theme, setTheme } = useTheme();
 
   const navItems = [
     { path: "/", label: "Home", icon: Home },
@@ -35,6 +37,9 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="text-foreground hover:bg-secondary h-9 w-9" onClick={() => setSearchOpen(true)}>
               <Search className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="text-foreground hover:bg-secondary h-9 w-9" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
             <Button variant="ghost" size="icon" className="text-foreground hover:bg-secondary h-9 w-9">
               <Bell className="h-5 w-5" />
