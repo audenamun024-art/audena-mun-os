@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { User, Building2, ArrowRight, Eye, EyeOff, Shield, Gavel, Award } from "lucide-react";
 import AuthRoleQuickAccess, { TestRoleAccount } from "@/components/auth/AuthRoleQuickAccess";
@@ -24,6 +25,7 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { refresh } = useAuth();
 
   const ensureProfileAndRole = async (fallbackName: string, fallbackType: "personal" | "organisation") => {
     await supabase.rpc("ensure_profile_and_role" as any, { _full_name: fallbackName, _account_type: fallbackType });
@@ -35,6 +37,7 @@ const Auth = () => {
       supabase.from("profiles").select("account_type").eq("user_id", userId).maybeSingle(),
     ]);
     const roles = new Set((roleRows || []).map((row: any) => row.role));
+    await refresh();
     if (roles.has("admin")) { navigate("/admin"); return; }
     if (roles.has("organizer")) { navigate("/organizer"); return; }
     if (roles.has("eb")) { navigate("/crisis"); return; }
@@ -52,7 +55,7 @@ const Auth = () => {
         const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, account_type: accountType }, emailRedirectTo: window.location.origin } });
         if (error) throw error;
         if (data.session?.user) await ensureProfileAndRole(fullName, accountType || "personal");
-        toast.success("Account created!");
+        toast.success("Account created! Check your email to verify.");
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -113,8 +116,8 @@ const Auth = () => {
             <div className="space-y-3 animate-fade-in">
               <p className="text-sm text-muted-foreground text-center mb-4">Choose your account type</p>
               {[
-                { type: "personal" as const, icon: User, title: "Personal Use", desc: "Join as delegate" },
-                { type: "organisation" as const, icon: Building2, title: "Organisation Use", desc: "Requires verification" },
+                { type: "personal" as const, icon: User, title: "Delegate", desc: "Join as a delegate" },
+                { type: "organisation" as const, icon: Building2, title: "Organisation", desc: "Host MUN events" },
               ].map((opt) => (
                 <button key={opt.type} onClick={() => setAccountType(opt.type)} className="w-full flex items-center gap-4 p-4 rounded-xl border border-border bg-secondary hover:border-primary/40 transition-all group">
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors"><opt.icon className="h-5 w-5 text-primary" /></div>
@@ -142,7 +145,7 @@ const Auth = () => {
                 <div className="relative mt-1.5"><Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="bg-secondary border-border h-11 pr-10" /><button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div>
               </div>
               <Button className="w-full bg-gradient-primary text-primary-foreground font-semibold h-11" onClick={handleAuth} disabled={loading}>
-                {loading ? <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> : mode === "login" ? "Sign In" : accountType === "organisation" ? "Create Organisation Account" : "Create Account"}
+                {loading ? <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> : mode === "login" ? "Sign In" : "Create Account"}
               </Button>
               {mode === "login" && <button type="button" onClick={handleForgotPassword} className="text-xs text-primary hover:underline w-full text-center block">Forgot password?</button>}
             </div>

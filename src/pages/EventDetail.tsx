@@ -1,7 +1,8 @@
-import { useParams, Link } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
+import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, DollarSign, Share2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -18,24 +19,28 @@ const EventDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [event, setEvent] = useState<any>(null);
   const [committees, setCommittees] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetch = async () => {
       const { data: ev } = await supabase.from("events").select("*").eq("id", id).maybeSingle();
       if (ev) { setEvent(ev); const { data: comms } = await supabase.from("committees").select("*").eq("event_id", id); setCommittees(comms || []); }
       else { const fb = fallbackEvents[id || "1"] || fallbackEvents["1"]; setEvent(fb); setCommittees(fb.committees || []); }
+      setLoading(false);
     };
     fetch();
   }, [id]);
 
-  if (!event) return <AppLayout><div className="p-8 text-center text-muted-foreground">Loading...</div></AppLayout>;
+  if (loading) return <AppLayout><div className="max-w-3xl mx-auto p-6 space-y-4"><Skeleton className="h-52 w-full rounded-xl" /><Skeleton className="h-6 w-3/4" /><Skeleton className="h-4 w-1/2" /></div></AppLayout>;
+  if (!event) return <AppLayout><div className="p-8 text-center text-muted-foreground">Event not found</div></AppLayout>;
+
   const fee = event.registration_fee || 0;
   const platformFee = event.platform_fee || 25;
 
   return (
     <AppLayout>
-      <div className="space-y-4">
-        <div className="relative h-52 overflow-hidden">
+      <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-4">
+        <div className="relative h-52 rounded-2xl overflow-hidden">
           <img src={event.banner_url || bannerImages[0]} alt={event.title} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
           <div className="absolute bottom-4 left-4 right-4">
@@ -44,7 +49,7 @@ const EventDetail = () => {
           </div>
         </div>
 
-        <div className="px-4 grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {[
             { icon: Calendar, label: `${event.start_date} – ${event.end_date}` },
             { icon: MapPin, label: event.location },
@@ -54,21 +59,32 @@ const EventDetail = () => {
           ))}
         </div>
 
-        <section className="px-4"><div className="bg-card rounded-xl border border-border p-4 shadow-card"><h2 className="text-base font-bold text-foreground mb-2">About</h2><p className="text-sm text-muted-foreground leading-relaxed">{event.description}</p></div></section>
+        <section className="bg-card rounded-xl border border-border p-4 shadow-card"><h2 className="text-base font-bold text-foreground mb-2">About</h2><p className="text-sm text-muted-foreground leading-relaxed">{event.description}</p></section>
 
         {committees.length > 0 && (
-          <section className="px-4"><div className="bg-card rounded-xl border border-border p-4 shadow-card"><h2 className="text-base font-bold text-foreground mb-3">Committees</h2><div className="space-y-2">
-            {committees.map((c: any, i: number) => (<div key={i} className="bg-secondary rounded-lg p-3"><div className="flex items-center justify-between mb-1"><h3 className="font-semibold text-sm text-foreground">{c.name}</h3><span className="text-xs text-muted-foreground">{c.capacity} seats</span></div><p className="text-xs text-muted-foreground">{c.agenda}</p></div>))}
-          </div></div></section>
+          <section className="bg-card rounded-xl border border-border p-4 shadow-card">
+            <h2 className="text-base font-bold text-foreground mb-3">Committees</h2>
+            <div className="space-y-2">
+              {committees.map((c: any, i: number) => (
+                <div key={i} className="bg-secondary rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-1"><h3 className="font-semibold text-sm text-foreground">{c.name}</h3><span className="text-xs text-muted-foreground">{c.capacity} seats</span></div>
+                  <p className="text-xs text-muted-foreground">{c.agenda}</p>
+                </div>
+              ))}
+            </div>
+          </section>
         )}
 
-        <section className="px-4"><div className="bg-card rounded-xl border border-border p-4 shadow-card"><h2 className="text-base font-bold text-foreground mb-3">Fee Breakdown</h2><div className="space-y-2 text-sm">
-          <div className="flex justify-between"><span className="text-muted-foreground">Registration</span><span>₹{fee}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">Platform Fee</span><span>₹{platformFee}</span></div>
-          <div className="flex justify-between border-t border-border pt-2"><span className="font-semibold">Total</span><span className="font-bold text-primary">₹{fee + platformFee}</span></div>
-        </div></div></section>
+        <section className="bg-card rounded-xl border border-border p-4 shadow-card">
+          <h2 className="text-base font-bold text-foreground mb-3">Fee Breakdown</h2>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between"><span className="text-muted-foreground">Registration</span><span>₹{fee}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Platform Fee</span><span>₹{platformFee}</span></div>
+            <div className="flex justify-between border-t border-border pt-2"><span className="font-semibold">Total</span><span className="font-bold text-primary">₹{fee + platformFee}</span></div>
+          </div>
+        </section>
 
-        <div className="px-4 pb-6 flex gap-3">
+        <div className="flex gap-3 pb-6">
           <Link to={`/events/${id}/register`} className="flex-1"><Button className="w-full bg-gradient-primary text-primary-foreground font-medium">Register Now</Button></Link>
           <Button variant="outline" size="icon" className="border-border" onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success("Link copied!"); }}><Share2 className="h-4 w-4" /></Button>
         </div>
