@@ -1,15 +1,18 @@
+import AppLayout from "@/components/layout/AppLayout";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Upload, Building2 } from "lucide-react";
+import { Upload, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const OrganizerRegister = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [formData, setFormData] = useState({ name: "", description: "", contactEmail: "", website: "" });
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -26,7 +29,6 @@ const OrganizerRegister = () => {
     if (!formData.name || !formData.contactEmail) { toast.error("Please fill in all required fields"); return; }
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error("Please sign in first"); navigate("/auth"); return; }
 
       let logoUrl = "";
@@ -56,13 +58,13 @@ const OrganizerRegister = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border px-4 h-14 flex items-center gap-3">
-        <Link to="/auth"><Button size="sm" variant="ghost" className="h-8 w-8 p-0"><ArrowLeft className="h-4 w-4" /></Button></Link>
-        <h1 className="text-lg font-bold text-foreground">Organizer Registration</h1>
-      </header>
-
+    <AppLayout>
       <div className="max-w-2xl mx-auto p-4 md:p-6 space-y-4">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Organizer Registration</h1>
+          <p className="text-sm text-muted-foreground">Register your institution to host MUN events</p>
+        </div>
+
         <section className="bg-card rounded-xl border border-border p-4 shadow-card">
           <label className="cursor-pointer flex items-center gap-4">
             <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
@@ -86,7 +88,7 @@ const OrganizerRegister = () => {
         <Button className="w-full bg-gradient-primary text-primary-foreground font-medium h-12" onClick={handleSubmit} disabled={loading}>{loading ? "Submitting..." : "Submit for Approval"}</Button>
         <p className="text-xs text-center text-muted-foreground pb-4">Your application will be reviewed by the AudenaMUN admin team.</p>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 

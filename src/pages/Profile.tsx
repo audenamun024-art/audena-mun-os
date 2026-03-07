@@ -3,26 +3,27 @@ import { Trophy, Edit, Settings, LogOut, CheckCircle2, Circle, Play, Award, Cale
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 const Profile = () => {
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<any>(null);
-  const [user, setUser] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
   const [completions, setCompletions] = useState<any[]>([]);
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ full_name: "", institution: "", bio: "", phone: "" });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchAll = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setUser(user);
+      if (!user) { setLoading(false); return; }
       const [profileRes, tasksRes, completionsRes, regsRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
         supabase.from("user_tasks").select("*").eq("active", true),
@@ -36,9 +37,10 @@ const Profile = () => {
       if (tasksRes.data) setTasks(tasksRes.data as any[]);
       if (completionsRes.data) setCompletions(completionsRes.data as any[]);
       if (regsRes.data) setRegistrations(regsRes.data as any[]);
+      setLoading(false);
     };
     fetchAll();
-  }, []);
+  }, [user]);
 
   const handleSaveProfile = async () => {
     if (!user) return;
@@ -49,7 +51,7 @@ const Profile = () => {
     toast.success("Profile updated!");
   };
 
-  const handleSignOut = async () => { await supabase.auth.signOut(); toast.success("Signed out"); navigate("/auth"); };
+  const handleSignOut = async () => { await signOut(); toast.success("Signed out"); navigate("/auth"); };
 
   const dp = profile || { full_name: "Guest User", institution: "Sign in to view profile", muns_attended: 0, awards_won: 0, rank_points: 0, bio: "", account_type: "personal" };
   const initials = dp.full_name ? dp.full_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() : "GU";
@@ -58,46 +60,54 @@ const Profile = () => {
 
   return (
     <AppLayout>
-      <div className="space-y-5">
-        <div className="px-5 pt-6 pb-4">
-          <div className="flex items-start gap-5">
-            <div className="w-20 h-20 rounded-full bg-gradient-primary flex items-center justify-center shrink-0">
-              <span className="text-primary-foreground text-2xl font-bold">{initials}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-bold text-foreground truncate">{dp.full_name}</h1>
-              <p className="text-xs text-muted-foreground mb-1">{dp.institution || "No institution set"}</p>
-              <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold capitalize">{dp.account_type}</span>
-              <div className="flex gap-6 mt-3">
-                {[
-                  { label: "MUNs", value: dp.muns_attended },
-                  { label: "Awards", value: dp.awards_won },
-                  { label: "Points", value: dp.rank_points },
-                ].map((s) => (
-                  <div key={s.label} className="text-center"><p className="text-base font-bold text-foreground">{s.value}</p><p className="text-[10px] text-muted-foreground">{s.label}</p></div>
-                ))}
-              </div>
-            </div>
-          </div>
-          {dp.bio && !editing && <p className="text-xs text-muted-foreground mt-3 leading-relaxed">{dp.bio}</p>}
-          {!editing ? (
-            <div className="flex gap-2 mt-4">
-              <Button className="flex-1 bg-gradient-primary text-primary-foreground h-9" size="sm" onClick={() => setEditing(true)}><Edit className="h-3.5 w-3.5 mr-1.5" /> Edit Profile</Button>
-              <Button variant="outline" className="flex-1 border-border h-9" size="sm" onClick={() => toast.info("Use Edit Profile to update")}><Settings className="h-3.5 w-3.5 mr-1.5" /> Settings</Button>
-            </div>
+      <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-6">
+        {/* Profile Header */}
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
+          {loading ? (
+            <div className="flex items-start gap-5"><Skeleton className="w-20 h-20 rounded-full" /><div className="flex-1 space-y-2"><Skeleton className="h-5 w-40" /><Skeleton className="h-3 w-24" /></div></div>
           ) : (
-            <div className="mt-4 space-y-3 bg-card rounded-xl border border-border p-4 shadow-card">
-              <div><Label className="text-xs text-muted-foreground">Full Name</Label><Input value={editForm.full_name} onChange={e => setEditForm({ ...editForm, full_name: e.target.value })} className="mt-1 bg-secondary border-border h-9" /></div>
-              <div><Label className="text-xs text-muted-foreground">Institution</Label><Input value={editForm.institution} onChange={e => setEditForm({ ...editForm, institution: e.target.value })} className="mt-1 bg-secondary border-border h-9" /></div>
-              <div><Label className="text-xs text-muted-foreground">Bio</Label><Input value={editForm.bio} onChange={e => setEditForm({ ...editForm, bio: e.target.value })} className="mt-1 bg-secondary border-border h-9" /></div>
-              <div><Label className="text-xs text-muted-foreground">Phone</Label><Input value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} className="mt-1 bg-secondary border-border h-9" /></div>
-              <div className="flex gap-2"><Button size="sm" className="bg-primary text-primary-foreground" onClick={handleSaveProfile}>Save</Button><Button size="sm" variant="outline" onClick={() => setEditing(false)}>Cancel</Button></div>
-            </div>
+            <>
+              <div className="flex items-start gap-5">
+                <div className="w-20 h-20 rounded-full bg-gradient-primary flex items-center justify-center shrink-0">
+                  <span className="text-primary-foreground text-2xl font-bold">{initials}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-lg font-bold text-foreground truncate">{dp.full_name}</h1>
+                  <p className="text-xs text-muted-foreground mb-1">{dp.institution || "No institution set"}</p>
+                  <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold capitalize">{dp.account_type}</span>
+                  <div className="flex gap-6 mt-3">
+                    {[
+                      { label: "MUNs", value: dp.muns_attended },
+                      { label: "Awards", value: dp.awards_won },
+                      { label: "Points", value: dp.rank_points },
+                    ].map((s) => (
+                      <div key={s.label} className="text-center"><p className="text-base font-bold text-foreground">{s.value}</p><p className="text-[10px] text-muted-foreground">{s.label}</p></div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {dp.bio && !editing && <p className="text-xs text-muted-foreground mt-3 leading-relaxed">{dp.bio}</p>}
+              {!editing ? (
+                <div className="flex gap-2 mt-4">
+                  <Button className="flex-1 bg-gradient-primary text-primary-foreground h-9" size="sm" onClick={() => setEditing(true)}><Edit className="h-3.5 w-3.5 mr-1.5" /> Edit Profile</Button>
+                  <Button variant="outline" className="flex-1 border-border h-9" size="sm" onClick={() => toast.info("Use Edit Profile to update")}><Settings className="h-3.5 w-3.5 mr-1.5" /> Settings</Button>
+                </div>
+              ) : (
+                <div className="mt-4 space-y-3 bg-secondary rounded-xl p-4">
+                  <div><Label className="text-xs text-muted-foreground">Full Name</Label><Input value={editForm.full_name} onChange={e => setEditForm({ ...editForm, full_name: e.target.value })} className="mt-1 bg-card border-border h-9" /></div>
+                  <div><Label className="text-xs text-muted-foreground">Institution</Label><Input value={editForm.institution} onChange={e => setEditForm({ ...editForm, institution: e.target.value })} className="mt-1 bg-card border-border h-9" /></div>
+                  <div><Label className="text-xs text-muted-foreground">Bio</Label><Input value={editForm.bio} onChange={e => setEditForm({ ...editForm, bio: e.target.value })} className="mt-1 bg-card border-border h-9" /></div>
+                  <div><Label className="text-xs text-muted-foreground">Phone</Label><Input value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} className="mt-1 bg-card border-border h-9" /></div>
+                  <div className="flex gap-2"><Button size="sm" className="bg-primary text-primary-foreground" onClick={handleSaveProfile}>Save</Button><Button size="sm" variant="outline" onClick={() => setEditing(false)}>Cancel</Button></div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
-        <section className="px-4">
-          <div className="flex items-center justify-between mb-3"><div className="flex items-center gap-2"><Award className="h-4 w-4 text-primary" /><h2 className="text-base font-bold text-foreground">Your Tasks</h2></div><span className="text-xs text-primary font-semibold">{totalPoints} pts earned</span></div>
+        {/* Tasks */}
+        <section>
+          <div className="flex items-center justify-between mb-3"><div className="flex items-center gap-2"><Award className="h-4 w-4 text-primary" /><h2 className="text-lg font-bold text-foreground">Your Tasks</h2></div><span className="text-xs text-primary font-semibold">{totalPoints} pts earned</span></div>
           <div className="space-y-2">
             {tasks.map((task: any) => {
               const completed = completedTaskIds.has(task.id);
@@ -109,13 +119,14 @@ const Profile = () => {
                 </div>
               );
             })}
-            {tasks.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Sign in to see your tasks</p>}
+            {tasks.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">{user ? "No tasks available" : "Sign in to see your tasks"}</p>}
           </div>
         </section>
 
+        {/* Registrations */}
         {registrations.length > 0 && (
-          <section className="px-4">
-            <div className="flex items-center gap-2 mb-3"><Calendar className="h-4 w-4 text-primary" /><h2 className="text-base font-bold text-foreground">My Registrations</h2></div>
+          <section>
+            <div className="flex items-center gap-2 mb-3"><Calendar className="h-4 w-4 text-primary" /><h2 className="text-lg font-bold text-foreground">My Registrations</h2></div>
             <div className="space-y-2">
               {registrations.map((reg: any) => (
                 <div key={reg.id} className="flex items-center justify-between p-3 bg-card rounded-xl border border-border shadow-card">
@@ -127,7 +138,8 @@ const Profile = () => {
           </section>
         )}
 
-        <div className="px-4 pb-6">
+        {/* Sign Out */}
+        <div className="pb-6">
           {user ? (
             <Button variant="outline" className="w-full text-destructive border-destructive/30 hover:bg-destructive/10" onClick={handleSignOut}><LogOut className="h-4 w-4 mr-2" /> Sign Out</Button>
           ) : (

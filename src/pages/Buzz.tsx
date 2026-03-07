@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import buzzImg from "@/assets/buzz-placeholder.jpg";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
@@ -14,10 +15,10 @@ type CommentsByVideo = Record<string, any[]>;
 type NameLookup = Record<string, string>;
 
 const Buzz = () => {
+  const { user } = useAuth();
   const [showUpload, setShowUpload] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
   const [videos, setVideos] = useState<any[]>([]);
-  const [user, setUser] = useState<any>(null);
   const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
   const [userBookmarks, setUserBookmarks] = useState<Set<string>>(new Set());
   const [commentsByVideo, setCommentsByVideo] = useState<CommentsByVideo>({});
@@ -39,8 +40,7 @@ const Buzz = () => {
   const fetchVideosAndComments = async () => {
     let query = supabase.from("videos").select("*").eq("flagged", false).order("created_at", { ascending: false });
     if (activeCategory !== "All") query = query.eq("category", activeCategory);
-    const { data: videoRows, error } = await query;
-    if (error) { toast.error(error.message); return; }
+    const { data: videoRows } = await query;
     const currentVideos = videoRows || [];
     setVideos(currentVideos);
     const videoIds = currentVideos.map((v: any) => v.id);
@@ -57,52 +57,43 @@ const Buzz = () => {
 
   useEffect(() => {
     const bootstrap = async () => {
-      const { data: authData } = await supabase.auth.getUser();
-      const activeUser = authData.user;
-      setUser(activeUser);
-      if (activeUser) {
-        const [{ data: votes }, { data: bookmarks }, { data: selfProfile }] = await Promise.all([
-          supabase.from("votes").select("video_id").eq("user_id", activeUser.id),
-          supabase.from("video_bookmarks").select("video_id").eq("user_id", activeUser.id),
-          supabase.from("profiles").select("full_name").eq("user_id", activeUser.id).maybeSingle(),
+      if (user) {
+        const [{ data: votes }, { data: bookmarks }] = await Promise.all([
+          supabase.from("votes").select("video_id").eq("user_id", user.id),
+          supabase.from("video_bookmarks").select("video_id").eq("user_id", user.id),
         ]);
         if (votes) setUserVotes(new Set((votes as any[]).map((v) => v.video_id)));
         if (bookmarks) setUserBookmarks(new Set((bookmarks as any[]).map((b) => b.video_id)));
-        if (selfProfile && (selfProfile as any).full_name) {
-          setNameLookup((prev) => ({ ...prev, [activeUser.id]: (selfProfile as any).full_name }));
-        }
       }
       await fetchVideosAndComments();
     };
     bootstrap();
-  }, []);
+  }, [user]);
 
   useEffect(() => { fetchVideosAndComments(); }, [activeCategory]);
 
   const handleLike = async (videoId: string) => {
     if (!user) { toast.error("Sign in to like videos"); return; }
-    const liked = userVotes.has(videoId);
-    if (liked) {
+    if (userVotes.has(videoId)) {
       await supabase.from("votes").delete().eq("user_id", user.id).eq("video_id", videoId);
       setUserVotes((prev) => { const c = new Set(prev); c.delete(videoId); return c; });
-      return;
+    } else {
+      await supabase.from("votes").insert([{ user_id: user.id, video_id: videoId }]);
+      setUserVotes((prev) => new Set(prev).add(videoId));
     }
-    await supabase.from("votes").insert([{ user_id: user.id, video_id: videoId }]);
-    setUserVotes((prev) => new Set(prev).add(videoId));
   };
 
   const handleBookmark = async (videoId: string) => {
     if (!user) { toast.error("Sign in to save videos"); return; }
-    const saved = userBookmarks.has(videoId);
-    if (saved) {
+    if (userBookmarks.has(videoId)) {
       await supabase.from("video_bookmarks").delete().eq("user_id", user.id).eq("video_id", videoId);
       setUserBookmarks((prev) => { const c = new Set(prev); c.delete(videoId); return c; });
       toast.success("Removed from saved");
-      return;
+    } else {
+      await supabase.from("video_bookmarks").insert([{ user_id: user.id, video_id: videoId }]);
+      setUserBookmarks((prev) => new Set(prev).add(videoId));
+      toast.success("Saved to bookmarks");
     }
-    await supabase.from("video_bookmarks").insert([{ user_id: user.id, video_id: videoId }]);
-    setUserBookmarks((prev) => new Set(prev).add(videoId));
-    toast.success("Saved to bookmarks");
   };
 
   const handleCommentSubmit = async (videoId: string) => {
@@ -123,12 +114,10 @@ const Buzz = () => {
     } catch { /* cancelled */ }
   };
 
-  const currentComments = useMemo(() => activeCommentsVideoId ? (commentsByVideo[activeCommentsVideoId] || []) : [], [activeCommentsVideoId, commentsByVideo]);
-
   return (
     <AppLayout>
-      <div className="space-y-4">
-        <div className="px-5 pt-5 pb-2 flex items-center justify-between">
+      <div className="max-w-2xl mx-auto p-4 md:p-6 space-y-4">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-foreground">Buzz</h1>
             <p className="text-xs text-muted-foreground">MUN reels, speeches, crisis moments</p>
@@ -138,18 +127,16 @@ const Buzz = () => {
           </Button>
         </div>
 
-        <div className="px-4">
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {categories.map((cat) => (
-              <button key={cat} onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
-                  activeCategory === cat ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
-                }`}>{cat}</button>
-            ))}
-          </div>
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {categories.map((cat) => (
+            <button key={cat} onClick={() => setActiveCategory(cat)}
+              className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                activeCategory === cat ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+              }`}>{cat}</button>
+          ))}
         </div>
 
-        <div className="px-4 space-y-5 pb-6">
+        <div className="space-y-5 pb-6">
           {videos.length === 0 && (
             <div className="text-center py-12"><Play className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" /><p className="text-sm text-muted-foreground">No videos yet. Be the first to post!</p></div>
           )}
