@@ -8,6 +8,7 @@ import { useTheme } from "next-themes";
 import SearchModal from "./SearchModal";
 import AppSidebar from "./AppSidebar";
 import NotificationDropdown from "./NotificationDropdown";
+import BottomNav from "./BottomNav";
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const [searchOpen, setSearchOpen] = useState(false);
