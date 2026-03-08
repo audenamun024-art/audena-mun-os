@@ -76,10 +76,8 @@ const Auth = () => {
     setEmail(account.email); setPassword(account.password); setMode("login");
     setLoading(true);
     try {
-      // Try sign in first
       const { data, error } = await supabase.auth.signInWithPassword({ email: account.email, password: account.password });
       if (error) {
-        // Account doesn't exist — create it
         const acctType = account.role === "Organizer" ? "organisation" as const : "personal" as const;
         const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
           email: account.email, password: account.password,
@@ -88,25 +86,12 @@ const Auth = () => {
         if (signUpErr) throw signUpErr;
         if (!signUpData.user) throw new Error("Signup failed");
         await ensureProfileAndRole(`Test ${account.role}`, acctType);
-
-        // Assign special roles
-        if (account.role === "Admin") {
-          await supabase.from("user_roles").insert([{ user_id: signUpData.user.id, role: "admin" as any }]);
-        }
-        if (account.role === "EB Member") {
-          await supabase.from("user_roles").insert([{ user_id: signUpData.user.id, role: "eb" as any }]);
-        }
+        if (account.role === "Admin") await supabase.from("user_roles").insert([{ user_id: signUpData.user.id, role: "admin" as any }]);
+        if (account.role === "EB Member") await supabase.from("user_roles").insert([{ user_id: signUpData.user.id, role: "eb" as any }]);
         if (account.role === "Organizer") {
           await supabase.from("user_roles").insert([{ user_id: signUpData.user.id, role: "organizer" as any }]);
-          // Create organizer record
-          await supabase.from("organizers").insert([{
-            user_id: signUpData.user.id,
-            name: "Test Organisation",
-            contact_email: account.email,
-            status: "approved" as any,
-          }]);
+          await supabase.from("organizers").insert([{ user_id: signUpData.user.id, name: "Test Organisation", contact_email: account.email, status: "approved" as any }]);
         }
-
         toast.success(`Created & signed in as ${account.role}`);
         await refresh();
         await routeAfterLogin(signUpData.user.id);
@@ -129,10 +114,12 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-extrabold mb-1"><span className="text-gradient-primary">AudenaMUN</span></h1>
+          <h1 className="text-2xl font-extrabold mb-1 text-foreground">
+            Audena<span className="text-primary">Hub</span>
+          </h1>
           <p className="text-xs text-muted-foreground tracking-widest uppercase">India's Premier MUN Platform</p>
         </div>
-        <div className="bg-card rounded-2xl p-5 border border-border shadow-elevated">
+        <div className="bg-card rounded-2xl p-5 border border-border shadow-card">
           <div className="flex bg-secondary rounded-xl p-1 mb-5">
             {(["login", "signup"] as const).map((m) => (
               <button key={m} onClick={() => { setMode(m); if (m === "login") setAccountType(null); }}
@@ -176,10 +163,10 @@ const Auth = () => {
                 <Label className="text-xs font-medium text-muted-foreground">Password</Label>
                 <div className="relative mt-1.5"><Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="bg-secondary border-border h-11 pr-10" /><button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div>
               </div>
-              <Button className="w-full bg-gradient-primary text-primary-foreground font-semibold h-11" onClick={handleAuth} disabled={loading}>
-                {loading ? <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> : mode === "login" ? "Sign In" : "Create Account"}
+              <Button className="w-full bg-foreground text-background hover:bg-foreground/90 font-semibold h-11" onClick={handleAuth} disabled={loading}>
+                {loading ? <div className="w-5 h-5 border-2 border-background/30 border-t-background rounded-full animate-spin" /> : mode === "login" ? "Sign In" : "Create Account"}
               </Button>
-              {mode === "login" && <button type="button" onClick={handleForgotPassword} className="text-xs text-primary hover:underline w-full text-center block">Forgot password?</button>}
+              {mode === "login" && <button type="button" onClick={handleForgotPassword} className="text-xs text-muted-foreground hover:text-foreground w-full text-center block">Forgot password?</button>}
             </div>
           )}
         </div>
