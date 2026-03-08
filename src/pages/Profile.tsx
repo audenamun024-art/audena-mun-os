@@ -35,20 +35,18 @@ const Profile = () => {
       const [profileRes, regsRes, tasksRes, completionsRes] = await Promise.all([
         profilePromise, regsPromise, tasksPromise, completionsPromise,
       ]);
-      if (results[0].data) {
-        setProfile(results[0].data);
+      if (profileRes?.data) {
+        setProfile(profileRes.data);
         setEditForm({
-          full_name: (results[0].data as any).full_name || "",
-          institution: (results[0].data as any).institution || "",
-          bio: (results[0].data as any).bio || "",
-          phone: (results[0].data as any).phone || "",
+          full_name: (profileRes.data as any).full_name || "",
+          institution: (profileRes.data as any).institution || "",
+          bio: (profileRes.data as any).bio || "",
+          phone: (profileRes.data as any).phone || "",
         });
       }
-      if (results[1].data) setRegistrations(results[1].data as any[]);
-      if (isDelegateOnly) {
-        if (results[2]?.data) setTasks(results[2].data as any[]);
-        if (results[3]?.data) setCompletions(results[3].data as any[]);
-      }
+      if (regsRes?.data) setRegistrations(regsRes.data as any[]);
+      if (tasksRes?.data) setTasks(tasksRes.data as any[]);
+      if (completionsRes?.data) setCompletions(completionsRes.data as any[]);
       setLoading(false);
     };
     fetchAll();
