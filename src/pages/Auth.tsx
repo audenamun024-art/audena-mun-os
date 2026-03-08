@@ -10,10 +10,10 @@ import { User, Building2, ArrowRight, Eye, EyeOff, Shield, Gavel, Award } from "
 import AuthRoleQuickAccess, { TestRoleAccount } from "@/components/auth/AuthRoleQuickAccess";
 
 const TEST_ACCOUNTS: TestRoleAccount[] = [
-  { role: "Delegate", icon: User, email: "delegate.audena@example.com", password: "delegate123", description: "Browse events, register, earn points" },
-  { role: "Organizer", icon: Gavel, email: "organizer.audena@example.com", password: "organizer123", description: "Create events, manage registrations" },
-  { role: "Admin", icon: Shield, email: "admin.audena@example.com", password: "admin123", description: "Platform oversight and moderation" },
-  { role: "EB Member", icon: Award, email: "eb.audena@example.com", password: "eb123456", description: "Crisis mode and event controls" },
+  { role: "Delegate", icon: User, email: "delegate@audena.test", password: "delegate123", description: "Browse events, register, earn points" },
+  { role: "Organizer", icon: Gavel, email: "organizer@audena.test", password: "organizer123", description: "Create events, manage registrations" },
+  { role: "Admin", icon: Shield, email: "admin@audena.test", password: "admin123!", description: "Platform oversight and moderation" },
+  { role: "EB Member", icon: Award, email: "eb@audena.test", password: "eb123456!", description: "Crisis mode and event controls" },
 ];
 
 const Auth = () => {
@@ -27,8 +27,8 @@ const Auth = () => {
   const navigate = useNavigate();
   const { refresh } = useAuth();
 
-  const ensureProfileAndRole = async (fallbackName: string, fallbackType: "personal" | "organisation") => {
-    await supabase.rpc("ensure_profile_and_role" as any, { _full_name: fallbackName, _account_type: fallbackType });
+  const ensureProfileAndRole = async (name: string, type: "personal" | "organisation") => {
+    await supabase.rpc("ensure_profile_and_role" as any, { _full_name: name, _account_type: type });
   };
 
   const routeAfterLogin = async (userId: string) => {
@@ -52,14 +52,19 @@ const Auth = () => {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, account_type: accountType }, emailRedirectTo: window.location.origin } });
+        const { data, error } = await supabase.auth.signUp({
+          email, password,
+          options: { data: { full_name: fullName, account_type: accountType } },
+        });
         if (error) throw error;
-        if (data.session?.user) await ensureProfileAndRole(fullName, accountType || "personal");
-        toast.success("Account created! Check your email to verify.");
+        if (data.user) {
+          await ensureProfileAndRole(fullName, accountType || "personal");
+          toast.success("Account created!");
+          await routeAfterLogin(data.user.id);
+        }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        await ensureProfileAndRole(fullName || "", accountType || "personal");
         toast.success("Welcome back!");
         await routeAfterLogin(data.user.id);
       }
@@ -71,15 +76,42 @@ const Auth = () => {
     setEmail(account.email); setPassword(account.password); setMode("login");
     setLoading(true);
     try {
+      // Try sign in first
       const { data, error } = await supabase.auth.signInWithPassword({ email: account.email, password: account.password });
       if (error) {
-        if (error.message?.toLowerCase().includes("invalid login credentials")) {
-          setMode("signup"); setAccountType(account.role === "Organizer" ? "organisation" : "personal"); setFullName(`Test ${account.role}`);
-          toast.info("Test account not found. Pre-filled Sign Up."); return;
+        // Account doesn't exist — create it
+        const acctType = account.role === "Organizer" ? "organisation" as const : "personal" as const;
+        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+          email: account.email, password: account.password,
+          options: { data: { full_name: `Test ${account.role}`, account_type: acctType } },
+        });
+        if (signUpErr) throw signUpErr;
+        if (!signUpData.user) throw new Error("Signup failed");
+        await ensureProfileAndRole(`Test ${account.role}`, acctType);
+
+        // Assign special roles
+        if (account.role === "Admin") {
+          await supabase.from("user_roles").insert([{ user_id: signUpData.user.id, role: "admin" as any }]);
         }
-        throw error;
+        if (account.role === "EB Member") {
+          await supabase.from("user_roles").insert([{ user_id: signUpData.user.id, role: "eb" as any }]);
+        }
+        if (account.role === "Organizer") {
+          await supabase.from("user_roles").insert([{ user_id: signUpData.user.id, role: "organizer" as any }]);
+          // Create organizer record
+          await supabase.from("organizers").insert([{
+            user_id: signUpData.user.id,
+            name: "Test Organisation",
+            contact_email: account.email,
+            status: "approved" as any,
+          }]);
+        }
+
+        toast.success(`Created & signed in as ${account.role}`);
+        await refresh();
+        await routeAfterLogin(signUpData.user.id);
+        return;
       }
-      await ensureProfileAndRole(`Test ${account.role}`, account.role === "Organizer" ? "organisation" : "personal");
       toast.success(`Signed in as ${account.role}`);
       await routeAfterLogin(data.user.id);
     } catch (err: any) { toast.error(err.message || "Quick access failed"); }
