@@ -1,5 +1,5 @@
 import AppLayout from "@/components/layout/AppLayout";
-import { Heart, Play, Share2, Plus, Bookmark, MessageCircle, Send, MessageSquareMore } from "lucide-react";
+import { Heart, Play, Share2, Plus, Bookmark, MessageCircle, Send, MessageSquareMore, ThumbsDown, Trash2, Eye, MoreVertical } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,16 +15,19 @@ type CommentsByVideo = Record<string, any[]>;
 type NameLookup = Record<string, string>;
 
 const Buzz = () => {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
+  const isAdmin = roles.has("admin");
   const [showUpload, setShowUpload] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
   const [videos, setVideos] = useState<any[]>([]);
+  const [voteCounts, setVoteCounts] = useState<Record<string, number>>({});
   const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
   const [userBookmarks, setUserBookmarks] = useState<Set<string>>(new Set());
   const [commentsByVideo, setCommentsByVideo] = useState<CommentsByVideo>({});
   const [activeCommentsVideoId, setActiveCommentsVideoId] = useState<string | null>(null);
   const [commentDraft, setCommentDraft] = useState("");
   const [nameLookup, setNameLookup] = useState<NameLookup>({});
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
 
   const fetchNamesForUsers = async (userIds: string[]) => {
     if (userIds.length === 0) return;
@@ -38,17 +41,31 @@ const Buzz = () => {
   };
 
   const fetchVideosAndComments = async () => {
-    let query = supabase.from("videos").select("*").eq("flagged", false).order("created_at", { ascending: false });
+    let query = supabase.from("videos").select("*").order("created_at", { ascending: false });
+    // Admin sees all including flagged; others only unflagged
+    if (!isAdmin) query = query.eq("flagged", false);
     if (activeCategory !== "All") query = query.eq("category", activeCategory);
     const { data: videoRows } = await query;
     const currentVideos = videoRows || [];
     setVideos(currentVideos);
+
     const videoIds = currentVideos.map((v: any) => v.id);
-    if (videoIds.length === 0) { setCommentsByVideo({}); return; }
-    const { data: commentRows } = await supabase.from("video_comments").select("*").in("video_id", videoIds).order("created_at", { ascending: false });
+    if (videoIds.length === 0) { setCommentsByVideo({}); setVoteCounts({}); return; }
+
+    const [{ data: commentRows }, { data: allVotes }] = await Promise.all([
+      supabase.from("video_comments").select("*").in("video_id", videoIds).order("created_at", { ascending: false }),
+      supabase.from("votes").select("video_id").in("video_id", videoIds),
+    ]);
+
+    // Count votes per video
+    const counts: Record<string, number> = {};
+    (allVotes || []).forEach((v: any) => { counts[v.video_id] = (counts[v.video_id] || 0) + 1; });
+    setVoteCounts(counts);
+
     const grouped: CommentsByVideo = {};
     (commentRows || []).forEach((c: any) => { if (!grouped[c.video_id]) grouped[c.video_id] = []; grouped[c.video_id].push(c); });
     setCommentsByVideo(grouped);
+
     const involvedUserIds = new Set<string>();
     currentVideos.forEach((v: any) => v.user_id && involvedUserIds.add(v.user_id));
     (commentRows || []).forEach((c: any) => c.user_id && involvedUserIds.add(c.user_id));
@@ -77,9 +94,11 @@ const Buzz = () => {
     if (userVotes.has(videoId)) {
       await supabase.from("votes").delete().eq("user_id", user.id).eq("video_id", videoId);
       setUserVotes((prev) => { const c = new Set(prev); c.delete(videoId); return c; });
+      setVoteCounts((prev) => ({ ...prev, [videoId]: Math.max(0, (prev[videoId] || 1) - 1) }));
     } else {
       await supabase.from("votes").insert([{ user_id: user.id, video_id: videoId }]);
       setUserVotes((prev) => new Set(prev).add(videoId));
+      setVoteCounts((prev) => ({ ...prev, [videoId]: (prev[videoId] || 0) + 1 }));
     }
   };
 
@@ -106,12 +125,43 @@ const Buzz = () => {
     toast.success("Comment posted");
   };
 
+  const handleDeleteComment = async (commentId: string, videoId: string) => {
+    await supabase.from("video_comments").delete().eq("id", commentId);
+    setCommentsByVideo((prev) => ({
+      ...prev,
+      [videoId]: (prev[videoId] || []).filter((c: any) => c.id !== commentId),
+    }));
+    toast.success("Comment deleted");
+  };
+
   const handleShare = async (video: any) => {
     const shareUrl = `${window.location.origin}/buzz?video=${video.id}`;
     try {
       if (navigator.share) await navigator.share({ title: video.title, url: shareUrl });
-      else { await navigator.clipboard.writeText(shareUrl); toast.success("Link copied"); }
+      else { await navigator.clipboard.writeText(shareUrl); toast.success("Link copied to clipboard"); }
     } catch { /* cancelled */ }
+  };
+
+  // Admin controls
+  const handleFlagVideo = async (videoId: string) => {
+    await supabase.from("videos").update({ flagged: true }).eq("id", videoId);
+    setVideos(videos.map(v => v.id === videoId ? { ...v, flagged: true } : v));
+    setMenuOpenId(null);
+    toast.success("Video flagged");
+  };
+
+  const handleUnflagVideo = async (videoId: string) => {
+    await supabase.from("videos").update({ flagged: false }).eq("id", videoId);
+    setVideos(videos.map(v => v.id === videoId ? { ...v, flagged: false } : v));
+    setMenuOpenId(null);
+    toast.success("Video unflagged");
+  };
+
+  const handleDeleteVideo = async (videoId: string) => {
+    await supabase.from("videos").delete().eq("id", videoId);
+    setVideos(videos.filter(v => v.id !== videoId));
+    setMenuOpenId(null);
+    toast.success("Video deleted");
   };
 
   return (
@@ -127,6 +177,14 @@ const Buzz = () => {
           </Button>
         </div>
 
+        {/* Admin indicator */}
+        {isAdmin && (
+          <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-2 flex items-center gap-2">
+            <Eye className="h-4 w-4 text-primary" />
+            <span className="text-xs text-primary font-medium">Admin Mode — You can see flagged content and manage all videos</span>
+          </div>
+        )}
+
         <div className="flex gap-2 overflow-x-auto pb-1">
           {categories.map((cat) => (
             <button key={cat} onClick={() => setActiveCategory(cat)}
@@ -138,53 +196,128 @@ const Buzz = () => {
 
         <div className="space-y-5 pb-6">
           {videos.length === 0 && (
-            <div className="text-center py-12"><Play className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" /><p className="text-sm text-muted-foreground">No videos yet. Be the first to post!</p></div>
+            <div className="text-center py-12">
+              <Play className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">No videos yet. Be the first to post!</p>
+            </div>
           )}
           {videos.map((video: any) => {
             const comments = commentsByVideo[video.id] || [];
             const showAll = activeCommentsVideoId === video.id;
             const toRender = showAll ? comments : comments.slice(0, 2);
+            const likeCount = voteCounts[video.id] || 0;
+            const isOwner = user?.id === video.user_id;
+            const canDelete = isAdmin || isOwner;
+
             return (
-              <article key={video.id} className="bg-card rounded-2xl border border-border overflow-hidden shadow-card">
+              <article key={video.id} className={`bg-card rounded-2xl border overflow-hidden shadow-card ${
+                video.flagged ? "border-destructive/30" : "border-border"
+              }`}>
+                {/* Header */}
                 <div className="flex items-center gap-3 p-3 border-b border-border">
                   <div className="w-9 h-9 rounded-full bg-gradient-primary flex items-center justify-center">
                     <span className="text-primary-foreground text-xs font-semibold">{(nameLookup[video.user_id] || "M").slice(0, 2).toUpperCase()}</span>
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-xs font-semibold text-foreground truncate">{nameLookup[video.user_id] || "MUN Delegate"}</p>
                     <p className="text-[10px] text-muted-foreground">{video.category}</p>
                   </div>
+                  {video.flagged && (
+                    <span className="text-[9px] bg-destructive/10 text-destructive px-2 py-0.5 rounded-full font-bold">FLAGGED</span>
+                  )}
+                  {/* Admin/Owner menu */}
+                  {canDelete && (
+                    <div className="relative">
+                      <button
+                        onClick={() => setMenuOpenId(menuOpenId === video.id ? null : video.id)}
+                        className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-secondary transition-colors"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                      {menuOpenId === video.id && (
+                        <div className="absolute right-0 top-8 bg-card border border-border rounded-xl shadow-elevated z-20 w-40 overflow-hidden">
+                          {isAdmin && !video.flagged && (
+                            <button onClick={() => handleFlagVideo(video.id)} className="w-full text-left px-3 py-2 text-xs hover:bg-secondary transition-colors text-warning flex items-center gap-2">
+                              <ThumbsDown className="h-3 w-3" /> Flag Video
+                            </button>
+                          )}
+                          {isAdmin && video.flagged && (
+                            <button onClick={() => handleUnflagVideo(video.id)} className="w-full text-left px-3 py-2 text-xs hover:bg-secondary transition-colors text-success flex items-center gap-2">
+                              <Eye className="h-3 w-3" /> Unflag Video
+                            </button>
+                          )}
+                          <button onClick={() => handleDeleteVideo(video.id)} className="w-full text-left px-3 py-2 text-xs hover:bg-destructive/5 transition-colors text-destructive flex items-center gap-2">
+                            <Trash2 className="h-3 w-3" /> Delete Video
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
+
+                {/* Video */}
                 <AspectRatio ratio={9 / 16} className="bg-secondary">
                   {video.video_url ? (
-                    <video controls playsInline preload="metadata" poster={video.thumbnail_url || buzzImg} className="w-full h-full object-cover"><source src={video.video_url} /></video>
+                    <video controls playsInline preload="metadata" poster={video.thumbnail_url || buzzImg} className="w-full h-full object-cover">
+                      <source src={video.video_url} />
+                    </video>
                   ) : (
                     <img src={video.thumbnail_url || buzzImg} alt={video.title} className="w-full h-full object-cover" loading="lazy" />
                   )}
                 </AspectRatio>
+
+                {/* Actions */}
                 <div className="p-3.5 space-y-3">
-                  <div className="flex items-center gap-4">
-                    <button onClick={() => handleLike(video.id)} className={`transition-colors ${userVotes.has(video.id) ? "text-destructive" : "text-foreground hover:text-destructive"}`}>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => handleLike(video.id)} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors ${userVotes.has(video.id) ? "text-destructive bg-destructive/5" : "text-foreground hover:bg-secondary"}`}>
                       <Heart className={`h-5 w-5 ${userVotes.has(video.id) ? "fill-current" : ""}`} />
+                      <span className="text-xs font-semibold">{likeCount > 0 ? likeCount : ""}</span>
                     </button>
-                    <button onClick={() => setActiveCommentsVideoId((p) => p === video.id ? null : video.id)} className="text-foreground hover:text-primary transition-colors"><MessageCircle className="h-5 w-5" /></button>
-                    <button onClick={() => handleShare(video)} className="text-foreground hover:text-primary transition-colors"><Share2 className="h-5 w-5" /></button>
-                    <button onClick={() => handleBookmark(video.id)} className={`ml-auto transition-colors ${userBookmarks.has(video.id) ? "text-primary" : "text-foreground hover:text-primary"}`}>
+                    <button onClick={() => setActiveCommentsVideoId((p) => p === video.id ? null : video.id)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-foreground hover:bg-secondary transition-colors">
+                      <MessageCircle className="h-5 w-5" />
+                      <span className="text-xs font-semibold">{comments.length > 0 ? comments.length : ""}</span>
+                    </button>
+                    <button onClick={() => handleShare(video)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-foreground hover:bg-secondary transition-colors">
+                      <Share2 className="h-5 w-5" />
+                    </button>
+                    <button onClick={() => handleBookmark(video.id)} className={`ml-auto px-2.5 py-1.5 rounded-lg transition-colors ${userBookmarks.has(video.id) ? "text-primary bg-primary/5" : "text-foreground hover:bg-secondary"}`}>
                       <Bookmark className={`h-5 w-5 ${userBookmarks.has(video.id) ? "fill-current" : ""}`} />
                     </button>
                   </div>
-                  <p className="text-xs text-foreground leading-relaxed">{video.title}</p>
+
+                  {/* Title & views */}
+                  <div>
+                    <p className="text-xs text-foreground leading-relaxed font-medium">{video.title}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{video.views || 0} views</p>
+                  </div>
+
+                  {/* Comments Section */}
                   <div className="space-y-2">
                     <button onClick={() => setActiveCommentsVideoId((p) => p === video.id ? null : video.id)} className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1">
                       <MessageSquareMore className="h-3.5 w-3.5" />{comments.length > 0 ? `View comments (${comments.length})` : "Be the first to comment"}
                     </button>
                     {toRender.map((c: any) => (
-                      <p key={c.id} className="text-xs text-foreground leading-relaxed"><span className="font-semibold mr-1">{nameLookup[c.user_id] || "Delegate"}</span>{c.content}</p>
+                      <div key={c.id} className="flex items-start gap-2 group">
+                        <p className="text-xs text-foreground leading-relaxed flex-1">
+                          <span className="font-semibold mr-1">{nameLookup[c.user_id] || "Delegate"}</span>{c.content}
+                        </p>
+                        {(isAdmin || c.user_id === user?.id) && (
+                          <button
+                            onClick={() => handleDeleteComment(c.id, video.id)}
+                            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all shrink-0 mt-0.5"
+                            title="Delete comment"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
                     ))}
                     {showAll && (
                       <div className="flex items-center gap-2 pt-1">
-                        <Input value={commentDraft} onChange={(e) => setCommentDraft(e.target.value)} placeholder="Add a comment..." className="h-9 bg-secondary border-border text-xs" />
-                        <Button size="sm" className="h-9 bg-primary text-primary-foreground" onClick={() => handleCommentSubmit(video.id)}><Send className="h-3.5 w-3.5" /></Button>
+                        <Input value={commentDraft} onChange={(e) => setCommentDraft(e.target.value)} placeholder="Add a comment..." className="h-9 bg-secondary border-border text-xs" onKeyDown={(e) => e.key === "Enter" && handleCommentSubmit(video.id)} />
+                        <Button size="sm" className="h-9 bg-primary text-primary-foreground" onClick={() => handleCommentSubmit(video.id)}>
+                          <Send className="h-3.5 w-3.5" />
+                        </Button>
                       </div>
                     )}
                   </div>
