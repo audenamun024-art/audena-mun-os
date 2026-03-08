@@ -24,8 +24,16 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="flex-1 flex flex-col min-w-0">
           <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border">
             <div className="flex items-center justify-between px-4 h-14">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <SidebarTrigger className="text-foreground hover:bg-secondary" />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:text-foreground hover:bg-secondary h-9 w-9"
+                  onClick={() => setSearchOpen(true)}
+                >
+                  <Search className="h-[18px] w-[18px]" />
+                </Button>
               </div>
 
               {/* Centered branding */}
