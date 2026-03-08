@@ -27,17 +27,14 @@ const Profile = () => {
   useEffect(() => {
     const fetchAll = async () => {
       if (!user) { setLoading(false); return; }
-      const queries: Promise<any>[] = [
-        supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
-        supabase.from("registrations").select("*, events(title, start_date, location)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),
-      ];
-      if (isDelegateOnly) {
-        queries.push(
-          supabase.from("user_tasks").select("*").eq("active", true),
-          supabase.from("task_completions").select("*").eq("user_id", user.id),
-        );
-      }
-      const results = await Promise.all(queries);
+      const profilePromise = supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
+      const regsPromise = supabase.from("registrations").select("*, events(title, start_date, location)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10);
+      const tasksPromise = isDelegateOnly ? supabase.from("user_tasks").select("*").eq("active", true) : null;
+      const completionsPromise = isDelegateOnly ? supabase.from("task_completions").select("*").eq("user_id", user.id) : null;
+
+      const [profileRes, regsRes, tasksRes, completionsRes] = await Promise.all([
+        profilePromise, regsPromise, tasksPromise, completionsPromise,
+      ]);
       if (results[0].data) {
         setProfile(results[0].data);
         setEditForm({
