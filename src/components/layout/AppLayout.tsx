@@ -30,23 +30,12 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
               {/* Centered branding */}
               <Link to="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-gradient-primary flex items-center justify-center md:hidden">
-                  <span className="text-primary-foreground text-xs font-black">A</span>
-                </div>
-                <span className="text-lg font-black tracking-tight">
+                <span className="text-xl font-display font-bold tracking-tight">
                   <span className="text-foreground">Audena</span><span className="text-primary">Hub</span>
                 </span>
               </Link>
 
               <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-muted-foreground hover:text-foreground hover:bg-secondary h-9 w-9"
-                  onClick={() => setSearchOpen(true)}
-                >
-                  <Search className="h-[18px] w-[18px]" />
-                </Button>
                 <NotificationDropdown />
                 {user ? (
                   <Link to="/profile">

@@ -28,17 +28,17 @@ const AppSidebar = () => {
   const isOrganizer = roles.has("organizer") || accountType === "organisation";
   const isEB = roles.has("eb");
   const isAdmin = roles.has("admin");
-
-  // Delegate-only items (no organizer/eb/admin)
   const isDelegateOnly = !isOrganizer && !isEB && !isAdmin;
 
   const mainItems = [
     { title: "Home", url: "/", icon: Home },
     { title: "Events", url: "/events", icon: Calendar },
     { title: "Buzz Feed", url: "/buzz", icon: Play },
-    { title: "Rankings", url: "/rankboard", icon: Trophy },
-    ...(isDelegateOnly ? [{ title: "Research", url: "/research", icon: Globe }] : []),
     { title: "Profile", url: "/profile", icon: User },
+    ...(isDelegateOnly ? [
+      { title: "Rankings", url: "/rankboard", icon: Trophy },
+      { title: "Research", url: "/research", icon: Globe },
+    ] : []),
   ];
 
   const organizerItems = isOrganizer ? [
@@ -49,7 +49,10 @@ const AppSidebar = () => {
   const managementItems = [
     ...(isEB ? [{ title: "Crisis Mode", url: "/crisis", icon: AlertTriangle }] : []),
     ...(isAdmin ? [{ title: "Admin Panel", url: "/admin", icon: Shield }] : []),
-    ...((isEB || isAdmin) ? [{ title: "Research Monitor", url: "/research", icon: Globe }] : []),
+    ...((isEB || isAdmin) ? [
+      { title: "Rankings", url: "/rankboard", icon: Trophy },
+      { title: "Research Monitor", url: "/research", icon: Globe },
+    ] : []),
   ];
 
   const handleSignOut = async () => {
@@ -61,13 +64,13 @@ const AppSidebar = () => {
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarHeader className="border-b border-border px-4 py-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-primary flex items-center justify-center shrink-0">
-            <span className="text-primary-foreground text-sm font-black">A</span>
-          </div>
           {!collapsed && (
-            <span className="text-lg font-black tracking-tight text-foreground">
+            <span className="text-lg font-display font-bold tracking-tight text-foreground">
               Audena<span className="text-primary">Hub</span>
             </span>
+          )}
+          {collapsed && (
+            <span className="text-lg font-display font-bold text-primary">A</span>
           )}
         </div>
       </SidebarHeader>

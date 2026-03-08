@@ -15,6 +15,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
+        display: ["Playfair Display", "serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -50,15 +51,15 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        indigo: {
-          DEFAULT: "hsl(var(--indigo))",
-          light: "hsl(var(--indigo-light))",
-          dark: "hsl(var(--indigo-dark))",
+        gold: {
+          DEFAULT: "hsl(var(--gold))",
+          light: "hsl(var(--gold-light))",
+          dark: "hsl(var(--gold-dark))",
         },
-        purple: {
-          DEFAULT: "hsl(var(--purple))",
-          light: "hsl(var(--purple-light))",
-          dark: "hsl(var(--purple-dark))",
+        bronze: {
+          DEFAULT: "hsl(var(--bronze))",
+          light: "hsl(var(--bronze-light))",
+          dark: "hsl(var(--bronze-dark))",
         },
         success: "hsl(var(--success))",
         warning: "hsl(var(--warning))",
