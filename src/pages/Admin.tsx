@@ -152,6 +152,18 @@ const Admin = () => {
     toast.info("Video flagged");
   };
 
+  const handleUnflagVideo = async (id: string) => {
+    await supabase.from("videos").update({ flagged: false }).eq("id", id);
+    setVideos(videos.map(v => v.id === id ? { ...v, flagged: false } : v));
+    toast.success("Video unflagged");
+  };
+
+  const handleDeleteVideo = async (id: string) => {
+    await supabase.from("videos").delete().eq("id", id);
+    setVideos(videos.filter(v => v.id !== id));
+    toast.success("Video deleted");
+  };
+
   const pendingOrgs = organizers.filter(o => o.status === "pending");
   const statCards = [
     { label: "Organizers", value: stats.organizers, icon: Gavel, color: "bg-primary/10 text-primary" },
@@ -302,14 +314,31 @@ const Admin = () => {
 
               {activeTab === "buzz" && (
                 <section className="space-y-2 animate-fade-in">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm text-muted-foreground">{videos.length} total videos · {videos.filter(v => v.flagged).length} flagged</p>
+                  </div>
                   {videos.map((v) => (
-                    <div key={v.id} className="flex items-center justify-between p-4 bg-card rounded-xl border border-border shadow-card">
-                      <div><p className="font-semibold text-sm text-foreground">{v.title}</p><p className="text-xs text-muted-foreground">{v.category} · {v.views || 0} views</p></div>
-                      {v.flagged ? (
-                        <span className="text-[10px] bg-destructive/10 text-destructive px-2 py-0.5 rounded-full font-semibold">Flagged</span>
-                      ) : (
-                        <Button size="sm" variant="outline" className="text-xs h-7 border-border" onClick={() => handleFlagVideo(v.id)}><Flag className="h-3 w-3 mr-1" /> Flag</Button>
-                      )}
+                    <div key={v.id} className={`flex items-center justify-between p-4 bg-card rounded-xl border shadow-card ${v.flagged ? "border-destructive/20 bg-destructive/3" : "border-border"}`}>
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        {v.thumbnail_url && <img src={v.thumbnail_url} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />}
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm text-foreground truncate">{v.title}</p>
+                          <p className="text-xs text-muted-foreground">{v.category} · {v.views || 0} views</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0 ml-3">
+                        {v.flagged ? (
+                          <>
+                            <span className="text-[10px] bg-destructive/10 text-destructive px-2 py-0.5 rounded-full font-semibold mr-1">Flagged</span>
+                            <Button size="sm" variant="outline" className="text-xs h-7 border-success/30 text-success" onClick={() => handleUnflagVideo(v.id)}>Unflag</Button>
+                          </>
+                        ) : (
+                          <Button size="sm" variant="outline" className="text-xs h-7 border-border" onClick={() => handleFlagVideo(v.id)}><Flag className="h-3 w-3 mr-1" /> Flag</Button>
+                        )}
+                        <Button size="sm" variant="outline" className="text-xs h-7 border-destructive/20 text-destructive hover:bg-destructive/5" onClick={() => handleDeleteVideo(v.id)}>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                   {videos.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No videos</p>}
