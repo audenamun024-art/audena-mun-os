@@ -8,6 +8,7 @@ import { useTheme } from "next-themes";
 import SearchModal from "./SearchModal";
 import AppSidebar from "./AppSidebar";
 import NotificationDropdown from "./NotificationDropdown";
+import BottomNav from "./BottomNav";
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -67,9 +68,10 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
           </header>
 
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 pb-16 md:pb-0">{children}</main>
         </div>
       </div>
+      <BottomNav />
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </SidebarProvider>
   );
