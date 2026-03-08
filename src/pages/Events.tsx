@@ -1,11 +1,13 @@
 import AppLayout from "@/components/layout/AppLayout";
-import { Calendar, MapPin, Users, ChevronRight, Search } from "lucide-react";
+import { Calendar, MapPin, Users, ChevronRight, Search, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { motion } from "framer-motion";
+import { PageTransition, fadeInUp, staggerContainer } from "@/components/motion/PageTransition";
 import eventImg1 from "@/assets/event-placeholder-1.jpg";
 import eventImg2 from "@/assets/event-placeholder-2.jpg";
 
@@ -42,118 +44,125 @@ const Events = () => {
   );
 
   const formatDate = (dateStr: string) => {
-    try {
-      return new Date(dateStr).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-    } catch { return dateStr; }
+    try { return new Date(dateStr).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }); }
+    catch { return dateStr; }
   };
 
   return (
     <AppLayout>
-      <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-5">
-        {/* Header */}
-        <div>
-          <h1 className="text-xl font-bold text-foreground">Events</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Discover MUN conferences across India</p>
-        </div>
+      <PageTransition>
+        <div className="max-w-5xl mx-auto p-4 md:p-8 space-y-6">
+          {/* Header */}
+          <motion.div variants={fadeInUp} initial="initial" animate="animate">
+            <div className="flex items-center gap-2 mb-1">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <h1 className="text-xl font-bold text-foreground tracking-tight">Events</h1>
+            </div>
+            <p className="text-sm text-muted-foreground">Discover MUN conferences across India</p>
+          </motion.div>
 
-        {/* Search + Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search events..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 bg-card border-border h-10"
-            />
-          </div>
-          <div className="flex gap-2 overflow-x-auto">
-            {filters.map((f) => (
-              <button
-                key={f}
-                onClick={() => setActiveFilter(f)}
-                className={`px-4 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all border capitalize ${
-                  activeFilter === f
-                    ? "bg-foreground text-background border-foreground"
-                    : "bg-transparent text-muted-foreground border-border hover:border-foreground/30 hover:text-foreground"
-                }`}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
-        </div>
+          {/* Search + Filters */}
+          <motion.div variants={fadeInUp} initial="initial" animate="animate" className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search events..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10 bg-card border-border h-11 rounded-xl"
+              />
+            </div>
+            <div className="flex gap-2 overflow-x-auto">
+              {filters.map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setActiveFilter(f)}
+                  className={`px-4 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border capitalize ${
+                    activeFilter === f
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-transparent text-muted-foreground border-border hover:border-foreground/30 hover:text-foreground"
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          </motion.div>
 
-        {/* Event Grid */}
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="bg-card rounded-xl border border-border p-4">
-                <Skeleton className="w-full h-40 rounded-lg mb-3" />
-                <Skeleton className="h-5 w-3/4 mb-2" />
-                <Skeleton className="h-4 w-1/2" />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filtered.map((event: any, i: number) => (
-              <Link
-                to={`/events/${event.id}`}
-                key={event.id}
-                className="group bg-card rounded-xl border border-border overflow-hidden hover:border-foreground/10 transition-all shadow-card hover:shadow-elevated"
-              >
-                <div className="relative overflow-hidden">
-                  <img
-                    src={event.banner_url || bannerImages[i % 2]}
-                    alt={event.title}
-                    className="w-full h-44 object-cover group-hover:scale-[1.02] transition-transform duration-500"
-                    loading="lazy"
-                  />
-                  <div className="absolute top-3 right-3">
-                    <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full capitalize backdrop-blur-md ${
-                      event.status === "published"
-                        ? "bg-success/20 text-success"
-                        : "bg-secondary/80 text-muted-foreground"
-                    }`}>
-                      {event.status}
-                    </span>
-                  </div>
+          {/* Event Grid */}
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="bg-card rounded-2xl border border-border p-4">
+                  <Skeleton className="w-full h-44 rounded-xl mb-3" />
+                  <Skeleton className="h-5 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-1/2" />
                 </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-foreground text-[15px] mb-2 group-hover:text-primary transition-colors line-clamp-1">
-                    {event.title}
-                  </h3>
-                  {event.description && (
-                    <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{event.description}</p>
-                  )}
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
-                    <span className="flex items-center gap-1.5">
-                      <MapPin className="h-3.5 w-3.5" />{event.location}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5" />{formatDate(event.start_date)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between pt-3 border-t border-border">
-                    <span className="text-sm font-bold text-foreground">₹{event.registration_fee}</span>
-                    <span className="text-xs font-medium text-primary flex items-center gap-0.5 group-hover:underline">
-                      View Details <ChevronRight className="h-3 w-3" />
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          ) : (
+            <motion.div variants={staggerContainer} initial="initial" animate="animate" className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filtered.map((event: any, i: number) => (
+                <motion.div key={event.id} variants={fadeInUp}>
+                  <Link
+                    to={`/events/${event.id}`}
+                    className="group block bg-card rounded-2xl border border-border overflow-hidden hover:border-foreground/10 transition-all shadow-card hover:shadow-elevated"
+                  >
+                    <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: 0.2 }}>
+                      <div className="relative overflow-hidden">
+                        <img
+                          src={event.banner_url || bannerImages[i % 2]}
+                          alt={event.title}
+                          className="w-full h-48 object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                          loading="lazy"
+                        />
+                        <div className="absolute top-3 right-3">
+                          <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full capitalize backdrop-blur-md ${
+                            event.status === "published"
+                              ? "bg-success/20 text-success"
+                              : "bg-secondary/80 text-muted-foreground"
+                          }`}>
+                            {event.status}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="p-5">
+                        <h3 className="font-bold text-foreground text-[15px] mb-2 group-hover:text-primary transition-colors line-clamp-1">
+                          {event.title}
+                        </h3>
+                        {event.description && (
+                          <p className="text-xs text-muted-foreground mb-3 line-clamp-2 leading-relaxed">{event.description}</p>
+                        )}
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
+                          <span className="flex items-center gap-1.5">
+                            <MapPin className="h-3.5 w-3.5" />{event.location}
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <Calendar className="h-3.5 w-3.5" />{formatDate(event.start_date)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between pt-3 border-t border-border">
+                          <span className="text-base font-black text-foreground">₹{event.registration_fee}</span>
+                          <span className="text-xs font-semibold text-primary flex items-center gap-0.5 group-hover:underline">
+                            View Details <ChevronRight className="h-3 w-3" />
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </Link>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
 
-        {!loading && filtered.length === 0 && (
-          <div className="text-center py-16">
-            <Calendar className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">No events found</p>
-          </div>
-        )}
-      </div>
+          {!loading && filtered.length === 0 && (
+            <motion.div variants={fadeInUp} initial="initial" animate="animate" className="text-center py-16">
+              <Calendar className="h-12 w-12 text-muted-foreground/20 mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">No events found</p>
+            </motion.div>
+          )}
+        </div>
+      </PageTransition>
     </AppLayout>
   );
 };
