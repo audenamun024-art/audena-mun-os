@@ -1,15 +1,15 @@
-import { motion } from "framer-motion";
+import { motion, type Transition, type Variants } from "framer-motion";
 import { ReactNode } from "react";
 
-const pageVariants = {
+const pageVariants: Variants = {
   initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -8 },
 };
 
-const pageTransition = {
+const pageTransition: Transition = {
   type: "tween",
-  ease: "easeOut",
+  ease: [0.25, 0.1, 0.25, 1],
   duration: 0.3,
 };
 
@@ -26,25 +26,26 @@ export const PageTransition = ({ children, className }: { children: ReactNode; c
   </motion.div>
 );
 
-export const staggerContainer = {
+export const staggerContainer: Variants = {
+  initial: {},
   animate: {
     transition: { staggerChildren: 0.06 },
   },
 };
 
-export const fadeInUp = {
+export const fadeInUp: Variants = {
   initial: { opacity: 0, y: 16 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] } },
 };
 
-export const fadeIn = {
+export const fadeIn: Variants = {
   initial: { opacity: 0 },
   animate: { opacity: 1, transition: { duration: 0.3 } },
 };
 
-export const scaleIn = {
+export const scaleIn: Variants = {
   initial: { opacity: 0, scale: 0.95 },
-  animate: { opacity: 1, scale: 1, transition: { duration: 0.3, ease: "easeOut" } },
+  animate: { opacity: 1, scale: 1, transition: { duration: 0.3, ease: [0.25, 0.1, 0.25, 1] } },
 };
 
 export const MotionCard = motion.div;
