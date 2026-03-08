@@ -152,6 +152,18 @@ const Admin = () => {
     toast.info("Video flagged");
   };
 
+  const handleUnflagVideo = async (id: string) => {
+    await supabase.from("videos").update({ flagged: false }).eq("id", id);
+    setVideos(videos.map(v => v.id === id ? { ...v, flagged: false } : v));
+    toast.success("Video unflagged");
+  };
+
+  const handleDeleteVideo = async (id: string) => {
+    await supabase.from("videos").delete().eq("id", id);
+    setVideos(videos.filter(v => v.id !== id));
+    toast.success("Video deleted");
+  };
+
   const pendingOrgs = organizers.filter(o => o.status === "pending");
   const statCards = [
     { label: "Organizers", value: stats.organizers, icon: Gavel, color: "bg-primary/10 text-primary" },
