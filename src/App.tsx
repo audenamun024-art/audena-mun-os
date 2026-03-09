@@ -24,6 +24,8 @@ import ResetPassword from "./pages/ResetPassword";
 import CrisisMode from "./pages/CrisisMode";
 import ResearchBrowser from "./pages/ResearchBrowser";
 import Chats from "./pages/Chats";
+import OrganizerProfile from "./pages/OrganizerProfile";
+import EBMarksheet from "./pages/EBMarksheet";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
