@@ -1,4 +1,4 @@
-import { Home, Calendar, Play, Trophy, User, Globe, Shield, Gavel, AlertTriangle, Building2, LogIn, PlusCircle, LogOut, Sun, Moon } from "lucide-react";
+import { Home, Calendar, Play, Trophy, User, MessageCircle, Shield, Gavel, AlertTriangle, Building2, LogIn, PlusCircle, LogOut, Sun, Moon } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,16 +34,15 @@ const AppSidebar = () => {
     { title: "Home", url: "/", icon: Home },
     { title: "Events", url: "/events", icon: Calendar },
     { title: "Buzz Feed", url: "/buzz", icon: Play },
+    { title: "Chats", url: "/chats", icon: MessageCircle },
     { title: "Profile", url: "/profile", icon: User },
     ...(isDelegateOnly ? [
       { title: "Rankings", url: "/rankboard", icon: Trophy },
-      { title: "Research", url: "/research", icon: Globe },
     ] : []),
   ];
 
   const organizerItems = isOrganizer ? [
-    { title: "Dashboard", url: "/organizer", icon: Gavel },
-    { title: "Create Event", url: "/events/create", icon: PlusCircle },
+    { title: "Organisation Profile", url: "/organizer", icon: Building2 },
   ] : [];
 
   const managementItems = [
@@ -51,7 +50,6 @@ const AppSidebar = () => {
     ...(isAdmin ? [{ title: "Admin Panel", url: "/admin", icon: Shield }] : []),
     ...((isEB || isAdmin) ? [
       { title: "Rankings", url: "/rankboard", icon: Trophy },
-      { title: "Research Monitor", url: "/research", icon: Globe },
     ] : []),
   ];
 
@@ -60,16 +58,31 @@ const AppSidebar = () => {
     navigate("/auth");
   };
 
+  const renderNavItem = (item: { title: string; url: string; icon: any }) => (
+    <SidebarMenuItem key={item.title}>
+      <SidebarMenuButton asChild>
+        <NavLink
+          to={item.url}
+          end={item.url === "/"}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
+          activeClassName="bg-primary/10 text-primary font-semibold"
+        >
+          <item.icon className="h-[18px] w-[18px] shrink-0" />
+          {!collapsed && <span className="text-[13px]">{item.title}</span>}
+        </NavLink>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarHeader className="border-b border-border px-4 py-4">
         <div className="flex items-center gap-2.5">
-          {!collapsed && (
+          {!collapsed ? (
             <span className="text-lg font-display font-bold tracking-tight text-foreground">
               Audena<span className="text-primary">Hub</span>
             </span>
-          )}
-          {collapsed && (
+          ) : (
             <span className="text-lg font-display font-bold text-primary">A</span>
           )}
         </div>
@@ -79,23 +92,7 @@ const AppSidebar = () => {
         <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-semibold">Menu</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {mainItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/"}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
-                      activeClassName="bg-primary/10 text-primary font-semibold"
-                    >
-                      <item.icon className="h-[18px] w-[18px] shrink-0" />
-                      {!collapsed && <span className="text-[13px]">{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            <SidebarMenu>{mainItems.map(renderNavItem)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
@@ -103,22 +100,7 @@ const AppSidebar = () => {
           <SidebarGroup>
             <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-semibold">Organizer</SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
-                {organizerItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <NavLink
-                        to={item.url}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
-                        activeClassName="bg-primary/10 text-primary font-semibold"
-                      >
-                        <item.icon className="h-[18px] w-[18px] shrink-0" />
-                        {!collapsed && <span className="text-[13px]">{item.title}</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
+              <SidebarMenu>{organizerItems.map(renderNavItem)}</SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
@@ -127,22 +109,7 @@ const AppSidebar = () => {
           <SidebarGroup>
             <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-semibold">Management</SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
-                {managementItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <NavLink
-                        to={item.url}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
-                        activeClassName="bg-primary/10 text-primary font-semibold"
-                      >
-                        <item.icon className="h-[18px] w-[18px] shrink-0" />
-                        {!collapsed && <span className="text-[13px]">{item.title}</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
+              <SidebarMenu>{managementItems.map(renderNavItem)}</SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
@@ -151,14 +118,7 @@ const AppSidebar = () => {
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink to="/auth" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-all" activeClassName="bg-primary/10 text-primary font-semibold">
-                      <LogIn className="h-[18px] w-[18px] shrink-0" />
-                      {!collapsed && <span className="text-[13px]">Sign In</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {renderNavItem({ title: "Sign In", url: "/auth", icon: LogIn })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -168,14 +128,7 @@ const AppSidebar = () => {
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink to="/organizer/register" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-all" activeClassName="bg-primary/10 text-primary font-semibold">
-                      <Building2 className="h-[18px] w-[18px] shrink-0" />
-                      {!collapsed && <span className="text-[13px]">Become Organizer</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {renderNavItem({ title: "Become Organizer", url: "/organizer/register", icon: Building2 })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

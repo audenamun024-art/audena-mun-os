@@ -1,11 +1,11 @@
-import { Home, Calendar, Play, Globe, User } from "lucide-react";
+import { Home, Calendar, Play, MessageCircle, User } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 
 const tabs = [
   { label: "Home", path: "/", icon: Home, end: true },
   { label: "Events", path: "/events", icon: Calendar },
   { label: "Buzz", path: "/buzz", icon: Play },
-  { label: "Research", path: "/research", icon: Globe },
+  { label: "Chats", path: "/chats", icon: MessageCircle },
   { label: "Profile", path: "/profile", icon: User },
 ];
 
