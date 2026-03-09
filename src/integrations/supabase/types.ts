@@ -49,6 +49,30 @@ export type Database = {
           },
         ]
       }
+      conversations: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_message_at: string | null
+          participant_one: string
+          participant_two: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          participant_one: string
+          participant_two: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          participant_one?: string
+          participant_two?: string
+        }
+        Relationships: []
+      }
       eb_access: {
         Row: {
           created_at: string | null
@@ -149,6 +173,98 @@ export type Database = {
           },
         ]
       }
+      marksheet_scores: {
+        Row: {
+          committee_id: string | null
+          created_at: string | null
+          delegate_user_id: string
+          diplomacy: number | null
+          event_id: string
+          id: string
+          research: number | null
+          scored_by: string
+          speaking: number | null
+          total: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          committee_id?: string | null
+          created_at?: string | null
+          delegate_user_id: string
+          diplomacy?: number | null
+          event_id: string
+          id?: string
+          research?: number | null
+          scored_by: string
+          speaking?: number | null
+          total?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          committee_id?: string | null
+          created_at?: string | null
+          delegate_user_id?: string
+          diplomacy?: number | null
+          event_id?: string
+          id?: string
+          research?: number | null
+          scored_by?: string
+          speaking?: number | null
+          total?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marksheet_scores_committee_id_fkey"
+            columns: ["committee_id"]
+            isOneToOne: false
+            referencedRelation: "committees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marksheet_scores_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string | null
+          id: string
+          read: boolean | null
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          read?: boolean | null
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          read?: boolean | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string | null
@@ -181,36 +297,45 @@ export type Database = {
       }
       organizers: {
         Row: {
+          city: string | null
           contact_email: string | null
+          country: string | null
           created_at: string | null
           description: string | null
           id: string
           logo_url: string | null
           name: string
+          state: string | null
           status: Database["public"]["Enums"]["organizer_status"] | null
           updated_at: string | null
           user_id: string
           website: string | null
         }
         Insert: {
+          city?: string | null
           contact_email?: string | null
+          country?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
           logo_url?: string | null
           name: string
+          state?: string | null
           status?: Database["public"]["Enums"]["organizer_status"] | null
           updated_at?: string | null
           user_id: string
           website?: string | null
         }
         Update: {
+          city?: string | null
           contact_email?: string | null
+          country?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
           logo_url?: string | null
           name?: string
+          state?: string | null
           status?: Database["public"]["Enums"]["organizer_status"] | null
           updated_at?: string | null
           user_id?: string
@@ -357,6 +482,41 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      secretaries: {
+        Row: {
+          created_at: string | null
+          designation: string
+          id: string
+          name: string
+          organizer_id: string
+          phone: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          designation: string
+          id?: string
+          name: string
+          organizer_id: string
+          phone?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          designation?: string
+          id?: string
+          name?: string
+          organizer_id?: string
+          phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "secretaries_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "organizers"
             referencedColumns: ["id"]
           },
         ]

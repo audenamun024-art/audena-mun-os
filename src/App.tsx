@@ -24,6 +24,8 @@ import ResetPassword from "./pages/ResetPassword";
 import CrisisMode from "./pages/CrisisMode";
 import ResearchBrowser from "./pages/ResearchBrowser";
 import Chats from "./pages/Chats";
+import OrganizerProfile from "./pages/OrganizerProfile";
+import EBMarksheet from "./pages/EBMarksheet";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -66,7 +68,9 @@ const App = () => (
                 {/* Role-protected routes */}
                 <Route path="/events/create" element={<ProtectedRoute requiredRole="organizer"><EventCreate /></ProtectedRoute>} />
                 <Route path="/organizer" element={<ProtectedRoute requiredRole="organizer"><Organizer /></ProtectedRoute>} />
+                <Route path="/organizer/profile" element={<ProtectedRoute requiredRole="organizer"><OrganizerProfile /></ProtectedRoute>} />
                 <Route path="/crisis" element={<ProtectedRoute requiredRole="eb"><CrisisMode /></ProtectedRoute>} />
+                <Route path="/eb/marksheet" element={<ProtectedRoute requiredRole="eb"><EBMarksheet /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><Admin /></ProtectedRoute>} />
 
                 <Route path="*" element={<NotFound />} />
