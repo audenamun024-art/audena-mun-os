@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 
 const categories = ["Best Speech", "Crisis Reaction", "Debate Moment", "Award"];
-const MAX_FILE_SIZE_MB = 200;
+const MAX_FILE_SIZE_MB = 50;
 
 type Props = {
   open: boolean;

@@ -15,6 +15,7 @@ import EventRegister from "./pages/EventRegister";
 import Buzz from "./pages/Buzz";
 import Rankboard from "./pages/Rankboard";
 import Profile from "./pages/Profile";
+import ProfileMenu from "./pages/ProfileMenu";
 import Admin from "./pages/Admin";
 import Organizer from "./pages/Organizer";
 import OrganizerRegister from "./pages/OrganizerRegister";
@@ -22,6 +23,7 @@ import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import CrisisMode from "./pages/CrisisMode";
 import ResearchBrowser from "./pages/ResearchBrowser";
+import Chats from "./pages/Chats";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -55,6 +57,8 @@ const App = () => (
 
                 {/* Auth-required routes */}
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/menu" element={<ProtectedRoute><ProfileMenu /></ProtectedRoute>} />
+                <Route path="/chats" element={<ProtectedRoute><Chats /></ProtectedRoute>} />
                 <Route path="/events/:id/register" element={<ProtectedRoute><EventRegister /></ProtectedRoute>} />
                 <Route path="/research" element={<ProtectedRoute><ResearchBrowser /></ProtectedRoute>} />
                 <Route path="/organizer/register" element={<ProtectedRoute><OrganizerRegister /></ProtectedRoute>} />
