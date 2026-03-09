@@ -7,16 +7,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
-const WHITELISTED_DOMAINS = ["wikipedia.org","un.org","reuters.com","bbc.com","bbc.co.uk","aljazeera.com","economist.com","foreignaffairs.com","icj-cij.org","who.int","worldbank.org","imf.org","amnesty.org","hrw.org","cfr.org"];
-const BLOCKED_DOMAINS = ["chat.openai.com","chatgpt.com","gemini.google.com","bard.google.com","quillbot.com","copy.ai","jasper.ai","claude.ai","perplexity.ai","writesonic.com","grammarly.com"];
+const WHITELISTED_DOMAINS = [
+  "wikipedia.org","un.org","reuters.com","bbc.com","bbc.co.uk","aljazeera.com",
+  "economist.com","foreignaffairs.com","icj-cij.org","who.int","worldbank.org",
+  "imf.org","amnesty.org","hrw.org","cfr.org","google.com","google.co.in",
+  "scholar.google.com","jstor.org","ncbi.nlm.nih.gov","arxiv.org"
+];
+const BLOCKED_DOMAINS = [
+  "chat.openai.com","chatgpt.com","gemini.google.com","bard.google.com",
+  "quillbot.com","copy.ai","jasper.ai","claude.ai","perplexity.ai","writesonic.com","grammarly.com"
+];
 const QUICK_LINKS = [
   { name: "Wikipedia", url: "https://en.wikipedia.org", icon: "📚" },
   { name: "United Nations", url: "https://un.org", icon: "🏛" },
+  { name: "Google Scholar", url: "https://scholar.google.com", icon: "🔍" },
   { name: "Reuters", url: "https://reuters.com", icon: "📰" },
   { name: "BBC News", url: "https://bbc.com/news", icon: "📺" },
   { name: "WHO", url: "https://who.int", icon: "🏥" },
   { name: "World Bank", url: "https://worldbank.org", icon: "🏦" },
-  { name: "Amnesty Int'l", url: "https://amnesty.org", icon: "⚖️" },
   { name: "Foreign Affairs", url: "https://foreignaffairs.com", icon: "🌍" },
 ];
 
@@ -44,18 +52,33 @@ const ResearchBrowser = () => {
 
   const navigateTo = (targetUrl: string) => {
     const fullUrl = targetUrl.startsWith("http") ? targetUrl : `https://${targetUrl}`;
-    if (!isDomainAllowed(fullUrl)) { setBlocked(true); setCurrentUrl(""); setIframeError(false); logAction("blocked", fullUrl); toast.error("This domain is not allowed."); return; }
-    setBlocked(false); setIframeError(false); setCurrentUrl(fullUrl); setIsLoading(true); logAction("navigate", fullUrl);
-    setTimeout(() => setIsLoading(false), 5000);
+    if (!isDomainAllowed(fullUrl)) {
+      setBlocked(true); setCurrentUrl(""); setIframeError(false);
+      logAction("blocked", fullUrl);
+      toast.error("This domain is not allowed. Try opening it externally.");
+      return;
+    }
+    setBlocked(false); setIframeError(false); setCurrentUrl(fullUrl); setIsLoading(true);
+    logAction("navigate", fullUrl);
+    // Many sites block iframes — auto-detect and offer external link
+    setTimeout(() => {
+      if (isLoading) {
+        setIsLoading(false);
+        setIframeError(true);
+      }
+    }, 8000);
   };
 
-  const openExternal = () => { if (currentUrl) window.open(currentUrl, "_blank", "noopener"); };
+  const openExternal = (externalUrl?: string) => {
+    const target = externalUrl || currentUrl;
+    if (target) window.open(target, "_blank", "noopener");
+  };
+
   const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); if (url.trim()) navigateTo(url.trim()); };
 
   return (
     <AppLayout>
       <div className="flex flex-col h-[calc(100vh-3.5rem)]">
-        {/* Browser toolbar */}
         <div className="bg-card border-b border-border px-4 py-2 space-y-2">
           <form onSubmit={handleSubmit} className="flex items-center gap-2">
             <div className="relative flex-1">
@@ -66,7 +89,11 @@ const ResearchBrowser = () => {
           </form>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2"><Shield className="h-3 w-3 text-success" /><span className="text-[10px] text-muted-foreground">Secure Research Mode</span></div>
-            {currentUrl && <Button size="sm" variant="ghost" className="h-6 text-[10px] text-primary gap-1" onClick={openExternal}><ExternalLink className="h-3 w-3" /> Open in tab</Button>}
+            {currentUrl && (
+              <Button size="sm" variant="ghost" className="h-6 text-[10px] text-primary gap-1" onClick={() => openExternal()}>
+                <ExternalLink className="h-3 w-3" /> Open in new tab
+              </Button>
+            )}
           </div>
         </div>
 
@@ -78,12 +105,16 @@ const ResearchBrowser = () => {
               <p className="text-sm text-muted-foreground text-center mb-6 max-w-xs">Secure browsing for MUN research. Only whitelisted academic and news domains.</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full max-w-md">
                 {QUICK_LINKS.map((link) => (
-                  <button key={link.name} onClick={() => { setUrl(link.url); navigateTo(link.url); }} className="bg-card rounded-xl border border-border p-3 text-center hover:border-primary/30 hover:shadow-sm transition-all">
-                    <span className="text-xl mb-1 block">{link.icon}</span><span className="text-xs text-foreground font-medium">{link.name}</span>
+                  <button key={link.name} onClick={() => { setUrl(link.url); openExternal(link.url); }} className="bg-card rounded-xl border border-border p-3 text-center hover:border-primary/30 hover:shadow-sm transition-all">
+                    <span className="text-xl mb-1 block">{link.icon}</span>
+                    <span className="text-xs text-foreground font-medium">{link.name}</span>
                   </button>
                 ))}
               </div>
-              <div className="mt-8 w-full max-w-md">
+              <p className="text-[10px] text-muted-foreground mt-6 text-center max-w-sm">
+                Most research sites block embedding. Quick links will open in a new tab for the best experience.
+              </p>
+              <div className="mt-4 w-full max-w-md">
                 <h3 className="text-xs font-semibold text-muted-foreground mb-2">Allowed Domains</h3>
                 <div className="flex flex-wrap gap-1">{WHITELISTED_DOMAINS.map((d) => <span key={d} className="text-[10px] bg-secondary text-muted-foreground px-2 py-0.5 rounded-full">{d}</span>)}</div>
               </div>
@@ -104,8 +135,13 @@ const ResearchBrowser = () => {
               {isLoading && <div className="absolute inset-0 flex items-center justify-center bg-background z-10"><div className="text-center"><div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-2" /><p className="text-sm text-muted-foreground">Loading...</p></div></div>}
               {iframeError && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-background z-10 p-6">
-                  <Globe className="h-12 w-12 text-muted-foreground/30 mb-4" /><h3 className="text-base font-bold text-foreground mb-2">Cannot embed this site</h3>
-                  <div className="flex gap-2"><Button onClick={openExternal} className="bg-primary text-primary-foreground"><ExternalLink className="h-4 w-4 mr-2" /> Open in tab</Button><Button variant="outline" onClick={() => { setCurrentUrl(""); setIframeError(false); setUrl(""); }}>Go Back</Button></div>
+                  <Globe className="h-12 w-12 text-muted-foreground/30 mb-4" />
+                  <h3 className="text-base font-bold text-foreground mb-2">Cannot embed this site</h3>
+                  <p className="text-xs text-muted-foreground mb-4 text-center max-w-xs">This site blocks iframe embedding. Open it in a new tab instead.</p>
+                  <div className="flex gap-2">
+                    <Button onClick={() => openExternal()} className="bg-primary text-primary-foreground"><ExternalLink className="h-4 w-4 mr-2" /> Open in new tab</Button>
+                    <Button variant="outline" onClick={() => { setCurrentUrl(""); setIframeError(false); setUrl(""); }}>Go Back</Button>
+                  </div>
                 </div>
               )}
               <iframe ref={iframeRef} src={currentUrl} className="w-full h-full" sandbox="allow-same-origin allow-scripts allow-forms allow-popups" onLoad={() => setIsLoading(false)} onError={() => { setIsLoading(false); setIframeError(true); }} title="Research Browser" />

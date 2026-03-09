@@ -1,5 +1,5 @@
 import AppLayout from "@/components/layout/AppLayout";
-import { Trophy, Edit, Settings, LogOut, CheckCircle2, Circle, Play, Award, Calendar, MapPin, Star } from "lucide-react";
+import { Edit, CheckCircle2, Circle, Play, Award, Calendar, MapPin, Menu, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,8 +20,8 @@ const Profile = () => {
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ full_name: "", institution: "", bio: "", phone: "" });
   const [loading, setLoading] = useState(true);
+  const [showTasks, setShowTasks] = useState(false);
 
-  // Only show delegate tasks for delegates (not organizers/eb/admin)
   const isDelegateOnly = !roles.has("organizer") && !roles.has("eb") && !roles.has("admin");
 
   useEffect(() => {
@@ -61,8 +61,6 @@ const Profile = () => {
     toast.success("Profile updated!");
   };
 
-  const handleSignOut = async () => { await signOut(); toast.success("Signed out"); navigate("/auth"); };
-
   const dp = profile || { full_name: "Guest User", institution: "Sign in to view profile", muns_attended: 0, awards_won: 0, rank_points: 0, bio: "", account_type: "personal" };
   const initials = dp.full_name ? dp.full_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() : "GU";
   const completedTaskIds = new Set(completions.map((c: any) => c.task_id));
@@ -76,17 +74,27 @@ const Profile = () => {
   return (
     <AppLayout>
       <div className="max-w-3xl mx-auto p-4 md:p-8 space-y-6">
-        {/* Profile Header */}
+        {/* Top bar with menu icon */}
+        <div className="flex items-center justify-end">
+          <button
+            onClick={() => navigate("/menu")}
+            className="p-2 rounded-lg hover:bg-secondary text-foreground transition-colors"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Profile Header — Instagram style */}
         <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
           {loading ? (
             <div className="flex items-start gap-5">
-              <Skeleton className="w-20 h-20 rounded-2xl" />
+              <Skeleton className="w-20 h-20 rounded-full" />
               <div className="flex-1 space-y-2"><Skeleton className="h-5 w-40" /><Skeleton className="h-3 w-24" /></div>
             </div>
           ) : (
             <>
               <div className="flex items-start gap-5">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-primary flex items-center justify-center shrink-0">
+                <div className="w-20 h-20 rounded-full bg-gradient-primary flex items-center justify-center shrink-0">
                   <span className="text-primary-foreground text-2xl font-bold">{initials}</span>
                 </div>
                 <div className="flex-1 min-w-0">
@@ -98,28 +106,30 @@ const Profile = () => {
                     {roles.has("eb") && <span className="text-[10px] bg-warning/10 text-warning px-2.5 py-0.5 rounded-full font-semibold">EB Member</span>}
                     {roles.has("admin") && <span className="text-[10px] bg-destructive/10 text-destructive px-2.5 py-0.5 rounded-full font-semibold">Admin</span>}
                   </div>
-                  <div className="flex gap-8 mt-4">
-                    {[
-                      { label: "MUNs", value: dp.muns_attended, icon: Calendar },
-                      { label: "Awards", value: dp.awards_won, icon: Award },
-                      { label: "Points", value: dp.rank_points, icon: Star },
-                    ].map((s) => (
-                      <div key={s.label} className="text-center">
-                        <p className="text-lg font-bold text-foreground">{s.value}</p>
-                        <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-1"><s.icon className="h-3 w-3" />{s.label}</p>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               </div>
+
+              {/* Instagram-style stats */}
+              <div className="flex justify-around mt-5 pt-4 border-t border-border">
+                <div className="text-center">
+                  <p className="text-lg font-bold text-foreground">0</p>
+                  <p className="text-[10px] text-muted-foreground">Network</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-foreground">0</p>
+                  <p className="text-[10px] text-muted-foreground">Drop</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-foreground">0</p>
+                  <p className="text-[10px] text-muted-foreground">Connect</p>
+                </div>
+              </div>
+
               {dp.bio && !editing && <p className="text-xs text-muted-foreground mt-4 leading-relaxed bg-secondary/50 rounded-xl p-3">{dp.bio}</p>}
               {!editing ? (
                 <div className="flex gap-2 mt-4">
                   <Button className="flex-1 bg-gradient-primary text-primary-foreground h-10 rounded-xl" size="sm" onClick={() => setEditing(true)}>
                     <Edit className="h-3.5 w-3.5 mr-1.5" /> Edit Profile
-                  </Button>
-                  <Button variant="outline" className="flex-1 border-border h-10 rounded-xl" size="sm" onClick={() => toast.info("Use Edit Profile to update")}>
-                    <Settings className="h-3.5 w-3.5 mr-1.5" /> Settings
                   </Button>
                 </div>
               ) : (
@@ -149,40 +159,45 @@ const Profile = () => {
           )}
         </div>
 
-        {/* Delegate Tasks — only for delegates */}
+        {/* Your Tasks with expandable panel */}
         {isDelegateOnly && tasks.length > 0 && (
           <section>
             <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Award className="h-4 w-4 text-primary" />
+              <button
+                onClick={() => setShowTasks(!showTasks)}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              >
+                <ClipboardList className="h-4 w-4 text-primary" />
                 <h2 className="text-base font-bold text-foreground">Your Tasks</h2>
-              </div>
+              </button>
               <span className="text-xs text-primary font-semibold bg-primary/10 px-2.5 py-0.5 rounded-full">{totalPoints} pts earned</span>
             </div>
-            <div className="space-y-2">
-              {tasks.map((task: any) => {
-                const completed = completedTaskIds.has(task.id);
-                return (
-                  <div key={task.id} className={`flex items-center gap-3 p-4 rounded-2xl border transition-all shadow-card ${
-                    completed ? "bg-primary/5 border-primary/15" : "bg-card border-border hover:border-primary/15"
-                  }`}>
-                    {completed ? <CheckCircle2 className="h-5 w-5 text-primary shrink-0" /> : <Circle className="h-5 w-5 text-muted-foreground/40 shrink-0" />}
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium ${completed ? "text-primary" : "text-foreground"}`}>{task.title}</p>
-                      <p className="text-[10px] text-muted-foreground">{task.description}</p>
+            {showTasks && (
+              <div className="space-y-2 animate-in slide-in-from-top-2">
+                {tasks.map((task: any) => {
+                  const completed = completedTaskIds.has(task.id);
+                  return (
+                    <div key={task.id} className={`flex items-center gap-3 p-4 rounded-2xl border transition-all shadow-card ${
+                      completed ? "bg-primary/5 border-primary/15" : "bg-card border-border hover:border-primary/15"
+                    }`}>
+                      {completed ? <CheckCircle2 className="h-5 w-5 text-primary shrink-0" /> : <Circle className="h-5 w-5 text-muted-foreground/40 shrink-0" />}
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium ${completed ? "text-primary" : "text-foreground"}`}>{task.title}</p>
+                        <p className="text-[10px] text-muted-foreground">{task.description}</p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">+{task.points}</span>
+                        {!completed && (
+                          <Link to="/buzz">
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 rounded-lg"><Play className="h-3.5 w-3.5 text-primary" /></Button>
+                          </Link>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">+{task.points}</span>
-                      {!completed && (
-                        <Link to="/buzz">
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 rounded-lg"><Play className="h-3.5 w-3.5 text-primary" /></Button>
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </section>
         )}
 
@@ -213,17 +228,6 @@ const Profile = () => {
             </div>
           </section>
         )}
-
-        {/* Sign Out */}
-        <div className="pb-6">
-          {user ? (
-            <Button variant="outline" className="w-full text-destructive border-destructive/20 hover:bg-destructive/5 h-11 rounded-xl" onClick={handleSignOut}>
-              <LogOut className="h-4 w-4 mr-2" /> Sign Out
-            </Button>
-          ) : (
-            <Link to="/auth"><Button className="w-full bg-gradient-primary text-primary-foreground h-11 rounded-xl">Sign In</Button></Link>
-          )}
-        </div>
       </div>
     </AppLayout>
   );
