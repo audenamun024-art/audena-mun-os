@@ -238,28 +238,28 @@ const OrganizerProfile = () => {
         country: form.country,
       };
 
-      const { error: organizerError } = await withTimeout(
+      const organizerUpdateResult = (await withTimeout(
         (supabase.from("organizers").update(organizerPayload as any) as any).eq("id", organizer.id),
         15000,
         "Saving organisation timed out"
-      );
-      if (organizerError) throw organizerError;
+      )) as any;
+      if (organizerUpdateResult?.error) throw organizerUpdateResult.error;
 
-      const { error: deleteError } = await withTimeout(
+      const deleteSecretariesResult = (await withTimeout(
         (supabase.from("secretaries" as any) as any).delete().eq("organizer_id", organizer.id),
         15000,
         "Resetting secretaries timed out"
-      );
-      if (deleteError) throw deleteError;
+      )) as any;
+      if (deleteSecretariesResult?.error) throw deleteSecretariesResult.error;
 
       const validSecretaries = secretariesWithUploads.filter((secretary) => secretary.name && secretary.designation);
       if (validSecretaries.length > 0) {
-        const { error: insertError } = await withTimeout(
+        const insertSecretariesResult = (await withTimeout(
           (supabase.from("secretaries" as any) as any).insert(validSecretaries),
           15000,
           "Saving secretaries timed out"
-        );
-        if (insertError) throw insertError;
+        )) as any;
+        if (insertSecretariesResult?.error) throw insertSecretariesResult.error;
       }
 
       setUploadProgress(100);
