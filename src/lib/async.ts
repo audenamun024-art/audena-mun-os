@@ -5,7 +5,7 @@ export class TimeoutError extends Error {
   }
 }
 
-export async function withTimeout<T>(promise: Promise<T>, ms = 15000, message?: string): Promise<T> {
+export async function withTimeout<T>(promise: PromiseLike<T>, ms = 15000, message?: string): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
   const timeoutPromise = new Promise<never>((_, reject) => {
@@ -13,7 +13,7 @@ export async function withTimeout<T>(promise: Promise<T>, ms = 15000, message?: 
   });
 
   try {
-    return await Promise.race([promise, timeoutPromise]);
+    return (await Promise.race([Promise.resolve(promise), timeoutPromise])) as T;
   } finally {
     if (timeoutId) clearTimeout(timeoutId);
   }
