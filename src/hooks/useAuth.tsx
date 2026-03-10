@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
+import { withTimeout } from "@/lib/async";
 
 type AuthContextType = {
   user: User | null;
@@ -29,6 +30,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchUserData = async (u: User | null) => {
+    setLoading(true);
+
     if (!u) {
       setUser(null);
       setRoles(new Set());
@@ -36,29 +39,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
       return;
     }
-    setUser(u);
-    const [{ data: roleRows }, { data: profileRow }] = await Promise.all([
-      supabase.from("user_roles").select("role").eq("user_id", u.id),
-      supabase.from("profiles").select("account_type").eq("user_id", u.id).maybeSingle(),
-    ]);
-    setRoles(new Set((roleRows || []).map((r: any) => r.role)));
-    setAccountType((profileRow as any)?.account_type || "personal");
-    setLoading(false);
+
+    try {
+      setUser(u);
+
+      const [{ data: roleRows }, { data: profileRow }] = await withTimeout(
+        Promise.all([
+          supabase.from("user_roles").select("role").eq("user_id", u.id),
+          supabase.from("profiles").select("account_type").eq("user_id", u.id).maybeSingle(),
+        ]),
+        15000,
+        "Authentication data timed out"
+      );
+
+      setRoles(new Set((roleRows || []).map((row: any) => row.role)));
+      setAccountType((profileRow as any)?.account_type || "personal");
+    } catch (error) {
+      console.error("Failed to fetch auth state", error);
+      setRoles(new Set());
+      setAccountType("personal");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const refresh = async () => {
-    const { data } = await supabase.auth.getUser();
-    await fetchUserData(data.user);
+    try {
+      const { data } = await withTimeout(supabase.auth.getUser(), 15000, "User session timed out");
+      await fetchUserData(data.user);
+    } catch (error) {
+      console.error("Failed to refresh auth state", error);
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      await fetchUserData(session?.user ?? null);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      void fetchUserData(session?.user ?? null);
     });
 
-    supabase.auth.getSession().then(({ data }) => {
-      fetchUserData(data.session?.user ?? null);
-    });
+    void supabase.auth
+      .getSession()
+      .then(({ data }) => fetchUserData(data.session?.user ?? null))
+      .catch((error) => {
+        console.error("Failed to get session", error);
+        setLoading(false);
+      });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -70,9 +98,5 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setAccountType("personal");
   };
 
-  return (
-    <AuthContext.Provider value={{ user, roles, accountType, loading, signOut, refresh }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={{ user, roles, accountType, loading, signOut, refresh }}>{children}</AuthContext.Provider>;
 };
