@@ -305,6 +305,7 @@ export type Database = {
           id: string
           logo_url: string | null
           name: string
+          place: string | null
           state: string | null
           status: Database["public"]["Enums"]["organizer_status"] | null
           updated_at: string | null
@@ -320,6 +321,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name: string
+          place?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["organizer_status"] | null
           updated_at?: string | null
@@ -335,6 +337,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name?: string
+          place?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["organizer_status"] | null
           updated_at?: string | null
@@ -494,6 +497,7 @@ export type Database = {
           name: string
           organizer_id: string
           phone: string | null
+          photo_url: string | null
         }
         Insert: {
           created_at?: string | null
@@ -502,6 +506,7 @@ export type Database = {
           name: string
           organizer_id: string
           phone?: string | null
+          photo_url?: string | null
         }
         Update: {
           created_at?: string | null
@@ -510,6 +515,7 @@ export type Database = {
           name?: string
           organizer_id?: string
           phone?: string | null
+          photo_url?: string | null
         }
         Relationships: [
           {
