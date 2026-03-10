@@ -82,10 +82,11 @@ const OrganizerProfile = () => {
     setErrorState(null);
 
     try {
-      const { data: org } = await retryAsync(
-        () => withTimeout(supabase.from("organizers").select("*").eq("user_id", user.id).maybeSingle() as any, 15000, "Organisation request timed out"),
+      const orgResult = (await retryAsync(
+        () => withTimeout(supabase.from("organizers").select("*").eq("user_id", user.id).maybeSingle(), 15000, "Organisation request timed out"),
         1
-      );
+      )) as any;
+      const org = orgResult?.data;
 
       if (!org) {
         navigate("/organizer/register");
@@ -105,24 +106,26 @@ const OrganizerProfile = () => {
       });
       setLogoPreview(org.logo_url || null);
 
-      const [{ data: secs }, { data: eventRows }] = await withTimeout(
+      const detailsResult = (await withTimeout(
         Promise.all([
           (supabase.from("secretaries" as any) as any).select("*").eq("organizer_id", org.id).order("created_at", { ascending: true }),
           supabase.from("events").select("id").eq("organizer_id", org.id),
         ]),
         15000,
         "Organisation details timed out"
-      );
+      )) as any[];
+      const secs = detailsResult?.[0]?.data;
+      const eventRows = detailsResult?.[1]?.data;
 
       const eventIds = (eventRows || []).map((event: any) => event.id);
       let totalRegistrations = 0;
       if (eventIds.length > 0) {
-        const { count } = await withTimeout(
+        const registrationCountResult = (await withTimeout(
           supabase.from("registrations").select("id", { count: "exact", head: true }).in("event_id", eventIds),
           15000,
           "Registration count timed out"
-        );
-        totalRegistrations = count || 0;
+        )) as any;
+        totalRegistrations = registrationCountResult?.count || 0;
       }
 
       setEventCount(eventIds.length);
