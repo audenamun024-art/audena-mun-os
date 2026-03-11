@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -48,7 +48,6 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <Routes>
-                {/* Public routes */}
                 <Route path="/" element={<Index />} />
                 <Route path="/events" element={<Events />} />
                 <Route path="/events/:id" element={<EventDetail />} />
@@ -57,7 +56,6 @@ const App = () => (
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
 
-                {/* Auth-required routes */}
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/menu" element={<ProtectedRoute><ProfileMenu /></ProtectedRoute>} />
                 <Route path="/chats" element={<ProtectedRoute><Chats /></ProtectedRoute>} />
@@ -65,10 +63,10 @@ const App = () => (
                 <Route path="/research" element={<ProtectedRoute><ResearchBrowser /></ProtectedRoute>} />
                 <Route path="/organizer/register" element={<ProtectedRoute><OrganizerRegister /></ProtectedRoute>} />
 
-                {/* Role-protected routes */}
                 <Route path="/events/create" element={<ProtectedRoute requiredRole="organizer"><EventCreate /></ProtectedRoute>} />
-                <Route path="/organizer" element={<ProtectedRoute requiredRole="organizer"><Organizer /></ProtectedRoute>} />
+                <Route path="/organizer" element={<ProtectedRoute requiredRole="organizer"><Navigate to="/organizer/profile" replace /></ProtectedRoute>} />
                 <Route path="/organizer/profile" element={<ProtectedRoute requiredRole="organizer"><OrganizerProfile /></ProtectedRoute>} />
+                <Route path="/organizer/dashboard" element={<ProtectedRoute requiredRole="organizer"><Organizer /></ProtectedRoute>} />
                 <Route path="/crisis" element={<ProtectedRoute requiredRole="eb"><CrisisMode /></ProtectedRoute>} />
                 <Route path="/eb/marksheet" element={<ProtectedRoute requiredRole="eb"><EBMarksheet /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><Admin /></ProtectedRoute>} />

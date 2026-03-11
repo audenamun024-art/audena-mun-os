@@ -1,4 +1,4 @@
-import { Home, Calendar, Play, Trophy, User, MessageCircle, Shield, Gavel, AlertTriangle, Building2, LogIn, PlusCircle, LogOut, Sun, Moon } from "lucide-react";
+import { Home, Calendar, Play, Trophy, User, MessageCircle, Shield, AlertTriangle, Building2, LogIn, LogOut, Sun, Moon } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,21 +36,15 @@ const AppSidebar = () => {
     { title: "Buzz Feed", url: "/buzz", icon: Play },
     { title: "Chats", url: "/chats", icon: MessageCircle },
     { title: "Profile", url: "/profile", icon: User },
-    ...(isDelegateOnly ? [
-      { title: "Rankings", url: "/rankboard", icon: Trophy },
-    ] : []),
+    ...(isDelegateOnly ? [{ title: "Rankings", url: "/rankboard", icon: Trophy }] : []),
   ];
 
-  const organizerItems = isOrganizer ? [
-    { title: "Organisation Profile", url: "/organizer", icon: Building2 },
-  ] : [];
+  const organizerItems = isOrganizer ? [{ title: "Organisation Profile", url: "/organizer/profile", icon: Building2 }] : [];
 
   const managementItems = [
     ...(isEB ? [{ title: "Crisis Mode", url: "/crisis", icon: AlertTriangle }] : []),
     ...(isAdmin ? [{ title: "Admin Panel", url: "/admin", icon: Shield }] : []),
-    ...((isEB || isAdmin) ? [
-      { title: "Rankings", url: "/rankboard", icon: Trophy },
-    ] : []),
+    ...((isEB || isAdmin) ? [{ title: "Rankings", url: "/rankboard", icon: Trophy }] : []),
   ];
 
   const handleSignOut = async () => {
@@ -117,9 +111,7 @@ const AppSidebar = () => {
         {!user && (
           <SidebarGroup>
             <SidebarGroupContent>
-              <SidebarMenu>
-                {renderNavItem({ title: "Sign In", url: "/auth", icon: LogIn })}
-              </SidebarMenu>
+              <SidebarMenu>{renderNavItem({ title: "Sign In", url: "/auth", icon: LogIn })}</SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
@@ -127,9 +119,7 @@ const AppSidebar = () => {
         {user && !isOrganizer && (
           <SidebarGroup>
             <SidebarGroupContent>
-              <SidebarMenu>
-                {renderNavItem({ title: "Become Organizer", url: "/organizer/register", icon: Building2 })}
-              </SidebarMenu>
+              <SidebarMenu>{renderNavItem({ title: "Become Organizer", url: "/organizer/register", icon: Building2 })}</SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
@@ -156,9 +146,7 @@ const AppSidebar = () => {
             {!collapsed && <span className="text-[13px]">Sign Out</span>}
           </Button>
         )}
-        {!collapsed && (
-          <p className="text-[10px] text-muted-foreground/40 text-center pt-2">Audena Hub v2.0</p>
-        )}
+        {!collapsed && <p className="text-[10px] text-muted-foreground/40 text-center pt-2">Audena Hub v2.0</p>}
       </SidebarFooter>
     </Sidebar>
   );
