@@ -7,7 +7,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { withTimeout } from "@/lib/async";
 
 type Conversation = {
   id: string;
@@ -43,7 +42,7 @@ const Chats = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const activeConvo = useMemo(
-    () => conversations.find((conversation) => conversation.id === activeConvoId) || null,
+    () => conversations.find((c) => c.id === activeConvoId) || null,
     [activeConvoId, conversations]
   );
 
@@ -71,14 +70,10 @@ const Chats = () => {
     setErrorState(null);
 
     try {
-      const { data: convos, error } = await withTimeout(
-        (supabase.from("conversations" as any) as any)
-          .select("*")
-          .or(`participant_one.eq.${user.id},participant_two.eq.${user.id}`)
-          .order("last_message_at", { ascending: false }),
-        15000,
-        "Conversations timed out"
-      );
+      const { data: convos, error } = await (supabase.from("conversations" as any) as any)
+        .select("*")
+        .or(`participant_one.eq.${user.id},participant_two.eq.${user.id}`)
+        .order("last_message_at", { ascending: false });
       if (error) throw error;
 
       if (!convos || convos.length === 0) {
@@ -86,40 +81,36 @@ const Chats = () => {
         return;
       }
 
-      const otherIds = (convos as any[]).map((conversation: any) =>
-        conversation.participant_one === user.id ? conversation.participant_two : conversation.participant_one
+      const otherIds = (convos as any[]).map((c: any) =>
+        c.participant_one === user.id ? c.participant_two : c.participant_one
       );
-      const convoIds = (convos as any[]).map((conversation: any) => conversation.id);
+      const convoIds = (convos as any[]).map((c: any) => c.id);
 
-      const [{ data: profiles }, { data: lastMsgs }] = await withTimeout(
-        Promise.all([
-          supabase.from("profiles").select("user_id, full_name").in("user_id", otherIds),
-          (supabase.from("messages" as any) as any)
-            .select("conversation_id, content, read, sender_id")
-            .in("conversation_id", convoIds)
-            .order("created_at", { ascending: false }),
-        ]),
-        15000,
-        "Conversation details timed out"
-      );
+      const [{ data: profiles }, { data: lastMsgs }] = await Promise.all([
+        supabase.from("profiles").select("user_id, full_name").in("user_id", otherIds),
+        (supabase.from("messages" as any) as any)
+          .select("conversation_id, content, read, sender_id")
+          .in("conversation_id", convoIds)
+          .order("created_at", { ascending: false }),
+      ]);
 
-      const nameMap = new Map((profiles || []).map((profile: any) => [profile.user_id, profile.full_name || "User"]));
+      const nameMap = new Map((profiles || []).map((p: any) => [p.user_id, p.full_name || "User"]));
       const lastMsgMap = new Map<string, any>();
       const unreadMap = new Map<string, number>();
 
-      ((lastMsgs as any[]) || []).forEach((message: any) => {
-        if (!lastMsgMap.has(message.conversation_id)) lastMsgMap.set(message.conversation_id, message);
-        if (!message.read && message.sender_id !== user.id) {
-          unreadMap.set(message.conversation_id, (unreadMap.get(message.conversation_id) || 0) + 1);
+      ((lastMsgs as any[]) || []).forEach((m: any) => {
+        if (!lastMsgMap.has(m.conversation_id)) lastMsgMap.set(m.conversation_id, m);
+        if (!m.read && m.sender_id !== user.id) {
+          unreadMap.set(m.conversation_id, (unreadMap.get(m.conversation_id) || 0) + 1);
         }
       });
 
       setConversations(
-        (convos as any[]).map((conversation: any) => ({
-          ...conversation,
-          otherName: nameMap.get(conversation.participant_one === user.id ? conversation.participant_two : conversation.participant_one) || "User",
-          lastMsg: lastMsgMap.get(conversation.id)?.content || "",
-          unread: unreadMap.get(conversation.id) || 0,
+        (convos as any[]).map((c: any) => ({
+          ...c,
+          otherName: nameMap.get(c.participant_one === user.id ? c.participant_two : c.participant_one) || "User",
+          lastMsg: lastMsgMap.get(c.id)?.content || "",
+          unread: unreadMap.get(c.id) || 0,
         }))
       );
     } catch (error) {
@@ -135,18 +126,14 @@ const Chats = () => {
 
     setLoadingMessages(true);
     try {
-      const { data, error } = await withTimeout(
-        (supabase.from("messages" as any) as any)
-          .select("*")
-          .eq("conversation_id", conversationId)
-          .order("created_at", { ascending: true }),
-        15000,
-        "Messages timed out"
-      );
+      const { data, error } = await (supabase.from("messages" as any) as any)
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true });
       if (error) throw error;
 
       setMessages(((data as Message[]) || []).sort((a, b) => a.created_at.localeCompare(b.created_at)));
-      setConversations((current) => current.map((conversation) => (conversation.id === conversationId ? { ...conversation, unread: 0 } : conversation)));
+      setConversations((cur) => cur.map((c) => (c.id === conversationId ? { ...c, unread: 0 } : c)));
 
       await (supabase.from("messages" as any) as any)
         .update({ read: true })
@@ -184,17 +171,12 @@ const Chats = () => {
         { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${activeConvoId}` },
         (payload: any) => {
           const incoming = payload.new as Message;
-          setMessages((current) => (current.some((message) => message.id === incoming.id) ? current : [...current, incoming]));
-          setConversations((current) =>
-            current.map((conversation) =>
-              conversation.id === incoming.conversation_id
-                ? {
-                    ...conversation,
-                    last_message_at: incoming.created_at,
-                    lastMsg: incoming.content,
-                    unread: incoming.sender_id === user?.id ? 0 : 1,
-                  }
-                : conversation
+          setMessages((cur) => (cur.some((m) => m.id === incoming.id) ? cur : [...cur, incoming]));
+          setConversations((cur) =>
+            cur.map((c) =>
+              c.id === incoming.conversation_id
+                ? { ...c, last_message_at: incoming.created_at, lastMsg: incoming.content, unread: incoming.sender_id === user?.id ? 0 : 1 }
+                : c
             )
           );
 
@@ -218,11 +200,12 @@ const Chats = () => {
     }
 
     try {
-      const { data, error } = await withTimeout(
-        supabase.from("profiles").select("user_id, full_name, institution").ilike("full_name", `%${query}%`).neq("user_id", user.id).limit(10),
-        15000,
-        "Search timed out"
-      );
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, institution")
+        .ilike("full_name", `%${query}%`)
+        .neq("user_id", user.id)
+        .limit(10);
       if (error) throw error;
       setSearchResults(data || []);
     } catch (error) {
@@ -235,9 +218,9 @@ const Chats = () => {
     if (!user) return;
 
     const existing = conversations.find(
-      (conversation) =>
-        (conversation.participant_one === user.id && conversation.participant_two === otherUserId) ||
-        (conversation.participant_one === otherUserId && conversation.participant_two === user.id)
+      (c) =>
+        (c.participant_one === user.id && c.participant_two === otherUserId) ||
+        (c.participant_one === otherUserId && c.participant_two === user.id)
     );
 
     if (existing) {
@@ -248,19 +231,15 @@ const Chats = () => {
     }
 
     try {
-      const { data, error } = await withTimeout(
-        (supabase.from("conversations" as any) as any)
-          .insert({ participant_one: user.id, participant_two: otherUserId })
-          .select()
-          .maybeSingle(),
-        15000,
-        "Conversation creation timed out"
-      );
+      const { data, error } = await (supabase.from("conversations" as any) as any)
+        .insert({ participant_one: user.id, participant_two: otherUserId })
+        .select()
+        .maybeSingle();
       if (error) throw error;
       if (!data) throw new Error("Conversation could not be created");
 
       const conversation: Conversation = { ...(data as any), otherName, lastMsg: "", unread: 0 };
-      setConversations((current) => [conversation, ...current]);
+      setConversations((cur) => [conversation, ...cur]);
       setActiveConvoId(conversation.id);
       setSearch("");
       setSearchResults([]);
@@ -278,24 +257,20 @@ const Chats = () => {
     setNewMsg("");
 
     try {
-      const { data, error } = await withTimeout(
-        (supabase.from("messages" as any) as any)
-          .insert({ conversation_id: activeConvoId, sender_id: user.id, content })
-          .select()
-          .maybeSingle(),
-        15000,
-        "Message send timed out"
-      );
+      const { data, error } = await (supabase.from("messages" as any) as any)
+        .insert({ conversation_id: activeConvoId, sender_id: user.id, content })
+        .select()
+        .maybeSingle();
       if (error) throw error;
       if (!data) throw new Error("Message could not be sent");
 
       const inserted = data as Message;
-      setMessages((current) => (current.some((message) => message.id === inserted.id) ? current : [...current, inserted]));
-      setConversations((current) =>
-        current.map((conversation) =>
-          conversation.id === activeConvoId
-            ? { ...conversation, last_message_at: inserted.created_at, lastMsg: inserted.content, unread: 0 }
-            : conversation
+      setMessages((cur) => (cur.some((m) => m.id === inserted.id) ? cur : [...cur, inserted]));
+      setConversations((cur) =>
+        cur.map((c) =>
+          c.id === activeConvoId
+            ? { ...c, last_message_at: inserted.created_at, lastMsg: inserted.content, unread: 0 }
+            : c
         )
       );
 
@@ -334,7 +309,7 @@ const Chats = () => {
             <h1 className="text-lg font-bold text-foreground mb-3">Chats</h1>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input value={search} onChange={(event) => void searchUsers(event.target.value)} placeholder="Search people..." className="pl-9 bg-secondary border-border h-10 rounded-xl text-sm" />
+              <Input value={search} onChange={(e) => void searchUsers(e.target.value)} placeholder="Search people..." className="pl-9 bg-secondary border-border h-10 rounded-xl text-sm" />
             </div>
           </div>
 
@@ -356,7 +331,7 @@ const Chats = () => {
 
           <div className="flex-1 overflow-y-auto">
             {loadingConversations ? (
-              <div className="p-4 space-y-3">{[1, 2, 3].map((item) => <Skeleton key={item} className="h-16 rounded-xl" />)}</div>
+              <div className="p-4 space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 rounded-xl" />)}</div>
             ) : errorState ? (
               <div className="text-center py-16 px-4 space-y-3">
                 <p className="text-sm text-muted-foreground">{errorState}</p>
@@ -369,20 +344,20 @@ const Chats = () => {
                 <p className="text-xs text-muted-foreground">Search for people to start chatting</p>
               </div>
             ) : (
-              conversations.map((conversation) => (
-                <button key={conversation.id} onClick={() => setActiveConvoId(conversation.id)} className={`w-full flex items-center gap-3 px-4 py-3.5 transition-colors text-left border-b border-border/50 ${activeConvoId === conversation.id ? "bg-primary/5" : "hover:bg-secondary/50"}`}>
+              conversations.map((c) => (
+                <button key={c.id} onClick={() => setActiveConvoId(c.id)} className={`w-full flex items-center gap-3 px-4 py-3.5 transition-colors text-left border-b border-border/50 ${activeConvoId === c.id ? "bg-primary/5" : "hover:bg-secondary/50"}`}>
                   <div className="relative">
                     <div className="w-11 h-11 rounded-full bg-secondary flex items-center justify-center">
-                      <span className="text-sm font-bold text-muted-foreground">{conversation.otherName[0].toUpperCase()}</span>
+                      <span className="text-sm font-bold text-muted-foreground">{c.otherName[0].toUpperCase()}</span>
                     </div>
-                    {(conversation.unread || 0) > 0 && <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-primary rounded-full text-[10px] font-bold text-primary-foreground flex items-center justify-center">{conversation.unread}</span>}
+                    {(c.unread || 0) > 0 && <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-primary rounded-full text-[10px] font-bold text-primary-foreground flex items-center justify-center">{c.unread}</span>}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-foreground truncate">{conversation.otherName}</p>
-                      <span className="text-[10px] text-muted-foreground shrink-0 ml-2">{formatTime(conversation.last_message_at)}</span>
+                      <p className="text-sm font-semibold text-foreground truncate">{c.otherName}</p>
+                      <span className="text-[10px] text-muted-foreground shrink-0 ml-2">{formatTime(c.last_message_at)}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground truncate mt-0.5">{conversation.lastMsg || "Start a conversation"}</p>
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">{c.lastMsg || "Start a conversation"}</p>
                   </div>
                 </button>
               ))
@@ -408,19 +383,19 @@ const Chats = () => {
 
               <div className="flex-1 overflow-y-auto p-4 space-y-2">
                 {loadingMessages ? (
-                  <div className="space-y-3">{[1, 2, 3].map((item) => <Skeleton key={item} className="h-14 rounded-2xl" />)}</div>
+                  <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-14 rounded-2xl" />)}</div>
                 ) : messages.length === 0 ? (
                   <div className="text-center py-12"><p className="text-xs text-muted-foreground">Send a message to start the conversation</p></div>
                 ) : (
-                  messages.map((message) => {
-                    const isMine = message.sender_id === user.id;
+                  messages.map((msg) => {
+                    const isMine = msg.sender_id === user.id;
                     return (
-                      <div key={message.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+                      <div key={msg.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
                         <div className={`max-w-[75%] px-3.5 py-2 rounded-2xl text-sm ${isMine ? "bg-primary text-primary-foreground rounded-br-md" : "bg-secondary text-foreground rounded-bl-md"}`}>
-                          <p className="break-words">{message.content}</p>
+                          <p className="break-words">{msg.content}</p>
                           <div className={`flex items-center gap-1 mt-1 ${isMine ? "justify-end" : ""}`}>
-                            <span className={`text-[9px] ${isMine ? "text-primary-foreground/60" : "text-muted-foreground"}`}>{formatTime(message.created_at)}</span>
-                            {isMine && (message.read ? <CheckCheck className="h-3 w-3 text-primary-foreground/60" /> : <Check className="h-3 w-3 text-primary-foreground/40" />)}
+                            <span className={`text-[9px] ${isMine ? "text-primary-foreground/60" : "text-muted-foreground"}`}>{formatTime(msg.created_at)}</span>
+                            {isMine && (msg.read ? <CheckCheck className="h-3 w-3 text-primary-foreground/60" /> : <Check className="h-3 w-3 text-primary-foreground/40" />)}
                           </div>
                         </div>
                       </div>
@@ -432,7 +407,7 @@ const Chats = () => {
 
               <div className="p-3 border-t border-border bg-card">
                 <div className="flex gap-2">
-                  <Input value={newMsg} onChange={(event) => setNewMsg(event.target.value)} placeholder="Type a message..." className="bg-secondary border-border h-11 rounded-xl" onKeyDown={(event) => event.key === "Enter" && void sendMessage()} />
+                  <Input value={newMsg} onChange={(e) => setNewMsg(e.target.value)} placeholder="Type a message..." className="bg-secondary border-border h-11 rounded-xl" onKeyDown={(e) => e.key === "Enter" && void sendMessage()} />
                   <Button onClick={() => void sendMessage()} className="bg-gradient-primary text-primary-foreground h-11 w-11 p-0 rounded-xl shrink-0" disabled={!newMsg.trim() || sending}>
                     <Send className="h-4 w-4" />
                   </Button>
