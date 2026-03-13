@@ -1,14 +1,15 @@
 import AppLayout from "@/components/layout/AppLayout";
-import { Heart, MessageCircle, Share2, Bookmark, Play, Plus, Send, MessageSquareMore, TrendingUp, Award, Users } from "lucide-react";
+import { Play, Plus, TrendingUp, Award, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import buzzImg from "@/assets/buzz-placeholder.jpg";
+import BuzzVideoCard from "@/components/buzz/BuzzVideoCard";
+import FullscreenReel from "@/components/buzz/FullscreenReel";
 
 type CommentsByVideo = Record<string, any[]>;
 type NameLookup = Record<string, string>;
@@ -19,13 +20,15 @@ const Index = () => {
   const [topDelegates, setTopDelegates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
+  const [voteCounts, setVoteCounts] = useState<Record<string, number>>({});
   const [userBookmarks, setUserBookmarks] = useState<Set<string>>(new Set());
   const [commentsByVideo, setCommentsByVideo] = useState<CommentsByVideo>({});
-  const [activeCommentsVideoId, setActiveCommentsVideoId] = useState<string | null>(null);
-  const [commentDraft, setCommentDraft] = useState("");
   const [nameLookup, setNameLookup] = useState<NameLookup>({});
   const [activeCategory, setActiveCategory] = useState("All");
+  const [visibleVideoId, setVisibleVideoId] = useState<string | null>(null);
+  const [fullscreenVideo, setFullscreenVideo] = useState<any>(null);
   const feedRef = useRef<HTMLDivElement>(null);
+  const videoRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   const categories = ["All", "Best Speech", "Crisis Reaction", "Debate Moment", "Award"];
 
@@ -49,7 +52,15 @@ const Index = () => {
 
     const videoIds = currentVideos.map((v: any) => v.id);
     if (videoIds.length > 0) {
-      const { data: commentRows } = await supabase.from("video_comments").select("*").in("video_id", videoIds).order("created_at", { ascending: false });
+      const [{ data: commentRows }, { data: allVotes }] = await Promise.all([
+        supabase.from("video_comments").select("*").in("video_id", videoIds).order("created_at", { ascending: false }),
+        supabase.from("votes").select("video_id").in("video_id", videoIds),
+      ]);
+
+      const counts: Record<string, number> = {};
+      (allVotes || []).forEach((v: any) => { counts[v.video_id] = (counts[v.video_id] || 0) + 1; });
+      setVoteCounts(counts);
+
       const grouped: CommentsByVideo = {};
       (commentRows || []).forEach((c: any) => { if (!grouped[c.video_id]) grouped[c.video_id] = []; grouped[c.video_id].push(c); });
       setCommentsByVideo(grouped);
@@ -84,14 +95,36 @@ const Index = () => {
 
   useEffect(() => { fetchVideos(); }, [activeCategory, fetchVideos]);
 
+  // Intersection Observer for auto-play
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let mostVisible: { id: string; ratio: number } | null = null;
+        entries.forEach((entry) => {
+          const id = entry.target.getAttribute("data-video-id");
+          if (id && entry.intersectionRatio > (mostVisible?.ratio || 0.5)) {
+            mostVisible = { id, ratio: entry.intersectionRatio };
+          }
+        });
+        if (mostVisible) setVisibleVideoId(mostVisible.id);
+      },
+      { threshold: [0.5, 0.75, 1.0] }
+    );
+
+    videoRefs.current.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [videos]);
+
   const handleLike = async (videoId: string) => {
     if (!user) { toast.error("Sign in to like videos"); return; }
     if (userVotes.has(videoId)) {
       await supabase.from("votes").delete().eq("user_id", user.id).eq("video_id", videoId);
       setUserVotes((prev) => { const c = new Set(prev); c.delete(videoId); return c; });
+      setVoteCounts((prev) => ({ ...prev, [videoId]: Math.max(0, (prev[videoId] || 1) - 1) }));
     } else {
       await supabase.from("votes").insert([{ user_id: user.id, video_id: videoId }]);
       setUserVotes((prev) => new Set(prev).add(videoId));
+      setVoteCounts((prev) => ({ ...prev, [videoId]: (prev[videoId] || 0) + 1 }));
     }
   };
 
@@ -107,13 +140,16 @@ const Index = () => {
     }
   };
 
-  const handleCommentSubmit = async (videoId: string) => {
-    const payload = commentDraft.trim();
-    if (!payload || !user) { if (!user) toast.error("Sign in to comment"); return; }
-    const { data, error } = await supabase.from("video_comments").insert([{ video_id: videoId, user_id: user.id, content: payload }]).select("*").single();
+  const handleCommentSubmit = async (videoId: string, content: string) => {
+    if (!user) { toast.error("Sign in to comment"); return; }
+    const { data, error } = await supabase.from("video_comments").insert([{ video_id: videoId, user_id: user.id, content }]).select("*").single();
     if (error) { toast.error(error.message); return; }
     setCommentsByVideo((prev) => ({ ...prev, [videoId]: [data, ...(prev[videoId] || [])] }));
-    setCommentDraft("");
+  };
+
+  const handleDeleteComment = async (commentId: string, videoId: string) => {
+    await supabase.from("video_comments").delete().eq("id", commentId);
+    setCommentsByVideo((prev) => ({ ...prev, [videoId]: (prev[videoId] || []).filter((c: any) => c.id !== commentId) }));
   };
 
   const handleShare = async (video: any) => {
@@ -135,28 +171,19 @@ const Index = () => {
     <AppLayout>
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0 lg:gap-6">
-          {/* Main Feed — Instagram-style scrollable reels */}
+          {/* Main Feed */}
           <div className="max-w-xl mx-auto w-full">
-            {/* Stories-style category bar */}
             <div className="sticky top-14 z-30 bg-background/95 backdrop-blur-md border-b border-border px-4 py-3">
               <div className="flex gap-2 overflow-x-auto no-scrollbar">
                 {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
+                  <button key={cat} onClick={() => setActiveCategory(cat)}
                     className={`px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all border ${
-                      activeCategory === cat
-                        ? "bg-foreground text-background border-foreground"
-                        : "bg-transparent text-muted-foreground border-border hover:border-foreground/30 hover:text-foreground"
-                    }`}
-                  >
-                    {cat}
-                  </button>
+                      activeCategory === cat ? "bg-foreground text-background border-foreground" : "bg-transparent text-muted-foreground border-border hover:border-foreground/30"
+                    }`}>{cat}</button>
                 ))}
               </div>
             </div>
 
-            {/* Feed */}
             <div ref={feedRef} className="divide-y divide-border">
               {loading ? (
                 Array.from({ length: 3 }).map((_, i) => (
@@ -165,8 +192,7 @@ const Index = () => {
                       <Skeleton className="w-10 h-10 rounded-full" />
                       <Skeleton className="h-4 w-32" />
                     </div>
-                    <Skeleton className="w-full aspect-[4/5] rounded-lg" />
-                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="w-full aspect-[9/16] max-h-[60vh] rounded-lg" />
                   </div>
                 ))
               ) : videos.length === 0 ? (
@@ -175,151 +201,50 @@ const Index = () => {
                     <Play className="h-8 w-8 text-muted-foreground" />
                   </div>
                   <h3 className="text-base font-semibold text-foreground mb-1">No posts yet</h3>
-                  <p className="text-sm text-muted-foreground mb-6 max-w-xs">
-                    Be the first to share a speech, debate moment, or crisis reaction from your MUN conference.
-                  </p>
+                  <p className="text-sm text-muted-foreground mb-6 max-w-xs">Be the first to share a speech or debate moment.</p>
                   {user && (
                     <Link to="/buzz">
-                      <Button variant="outline" className="gap-2">
-                        <Plus className="h-4 w-4" /> Create Post
-                      </Button>
+                      <Button variant="outline" className="gap-2"><Plus className="h-4 w-4" /> Create Post</Button>
                     </Link>
                   )}
                 </div>
               ) : (
-                videos.map((video: any) => {
-                  const comments = commentsByVideo[video.id] || [];
-                  const showAll = activeCommentsVideoId === video.id;
-                  const toRender = showAll ? comments : comments.slice(0, 2);
-
-                  return (
-                    <article key={video.id} className="pb-1">
-                      {/* Header */}
-                      <div className="flex items-center gap-3 px-4 py-3">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center ring-2 ring-background">
-                          <span className="text-primary-foreground text-[11px] font-bold">
-                            {(nameLookup[video.user_id] || "M").slice(0, 2).toUpperCase()}
-                          </span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[13px] font-semibold text-foreground truncate">
-                            {nameLookup[video.user_id] || "MUN Delegate"}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground">{video.category || "Buzz"}</p>
-                        </div>
-                      </div>
-
-                      {/* Media */}
-                      <div className="bg-secondary aspect-[4/5] relative overflow-hidden">
-                        {video.video_url ? (
-                          <video
-                            controls
-                            playsInline
-                            preload="metadata"
-                            poster={video.thumbnail_url || buzzImg}
-                            className="w-full h-full object-cover"
-                          >
-                            <source src={video.video_url} />
-                          </video>
-                        ) : (
-                          <img
-                            src={video.thumbnail_url || buzzImg}
-                            alt={video.title}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        )}
-                      </div>
-
-                      {/* Actions */}
-                      <div className="px-4 pt-3 pb-1">
-                        <div className="flex items-center gap-5 mb-2">
-                          <button
-                            onClick={() => handleLike(video.id)}
-                            className={`transition-transform active:scale-125 ${userVotes.has(video.id) ? "text-destructive" : "text-foreground hover:text-muted-foreground"}`}
-                          >
-                            <Heart className={`h-6 w-6 ${userVotes.has(video.id) ? "fill-current" : ""}`} />
-                          </button>
-                          <button
-                            onClick={() => setActiveCommentsVideoId((p) => p === video.id ? null : video.id)}
-                            className="text-foreground hover:text-muted-foreground transition-colors"
-                          >
-                            <MessageCircle className="h-6 w-6" />
-                          </button>
-                          <button
-                            onClick={() => handleShare(video)}
-                            className="text-foreground hover:text-muted-foreground transition-colors"
-                          >
-                            <Share2 className="h-6 w-6" />
-                          </button>
-                          <button
-                            onClick={() => handleBookmark(video.id)}
-                            className={`ml-auto transition-colors ${userBookmarks.has(video.id) ? "text-foreground" : "text-foreground hover:text-muted-foreground"}`}
-                          >
-                            <Bookmark className={`h-6 w-6 ${userBookmarks.has(video.id) ? "fill-current" : ""}`} />
-                          </button>
-                        </div>
-
-                        {/* Caption */}
-                        <p className="text-[13px] text-foreground leading-snug mb-1">
-                          <span className="font-semibold mr-1.5">{nameLookup[video.user_id] || "Delegate"}</span>
-                          {video.title}
-                        </p>
-                        {video.description && (
-                          <p className="text-[13px] text-muted-foreground leading-snug mb-1">{video.description}</p>
-                        )}
-
-                        {/* Comments */}
-                        <div className="mt-1 space-y-1">
-                          {comments.length > 2 && !showAll && (
-                            <button
-                              onClick={() => setActiveCommentsVideoId(video.id)}
-                              className="text-[13px] text-muted-foreground hover:text-foreground"
-                            >
-                              View all {comments.length} comments
-                            </button>
-                          )}
-                          {toRender.map((c: any) => (
-                            <p key={c.id} className="text-[13px] text-foreground leading-snug">
-                              <span className="font-semibold mr-1.5">{nameLookup[c.user_id] || "Delegate"}</span>
-                              {c.content}
-                            </p>
-                          ))}
-                          {showAll && (
-                            <div className="flex items-center gap-2 pt-2 pb-1">
-                              <Input
-                                value={commentDraft}
-                                onChange={(e) => setCommentDraft(e.target.value)}
-                                placeholder="Add a comment..."
-                                className="h-9 bg-transparent border-0 border-b border-border rounded-none text-[13px] focus-visible:ring-0 px-0"
-                                onKeyDown={(e) => e.key === "Enter" && handleCommentSubmit(video.id)}
-                              />
-                              <button
-                                onClick={() => handleCommentSubmit(video.id)}
-                                disabled={!commentDraft.trim()}
-                                className="text-primary font-semibold text-[13px] disabled:opacity-30"
-                              >
-                                Post
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        <p className="text-[11px] text-muted-foreground mt-2 uppercase tracking-wide">
-                          {video.created_at ? new Date(video.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "Recently"}
-                        </p>
-                      </div>
-                    </article>
-                  );
-                })
+                videos.map((video: any) => (
+                  <div
+                    key={video.id}
+                    data-video-id={video.id}
+                    ref={(el) => { if (el) videoRefs.current.set(video.id, el); else videoRefs.current.delete(video.id); }}
+                  >
+                    <BuzzVideoCard
+                      video={video}
+                      nameLookup={nameLookup}
+                      comments={commentsByVideo[video.id] || []}
+                      likeCount={voteCounts[video.id] || 0}
+                      isLiked={userVotes.has(video.id)}
+                      isBookmarked={userBookmarks.has(video.id)}
+                      isAdmin={false}
+                      isOwner={user?.id === video.user_id}
+                      userId={user?.id}
+                      onLike={handleLike}
+                      onBookmark={handleBookmark}
+                      onShare={handleShare}
+                      onComment={handleCommentSubmit}
+                      onDeleteComment={handleDeleteComment}
+                      onFlag={() => {}}
+                      onUnflag={() => {}}
+                      onDelete={() => {}}
+                      onOpenFullscreen={setFullscreenVideo}
+                      isVisible={visibleVideoId === video.id}
+                    />
+                  </div>
+                ))
               )}
             </div>
           </div>
 
-          {/* Right sidebar — Desktop only */}
+          {/* Right sidebar */}
           <aside className="hidden lg:block sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto border-l border-border">
             <div className="p-5 space-y-6">
-              {/* User card */}
               {user ? (
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
@@ -341,7 +266,6 @@ const Index = () => {
                 </div>
               )}
 
-              {/* Top Delegates */}
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Top Delegates</p>
@@ -363,7 +287,6 @@ const Index = () => {
                 </div>
               </div>
 
-              {/* Quick links */}
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Explore</p>
                 <div className="grid grid-cols-2 gap-2">
@@ -373,29 +296,37 @@ const Index = () => {
                     { label: "Research", path: "/research", icon: "🔬" },
                     { label: "Rankings", path: "/rankboard", icon: "🏆" },
                   ].map((item) => (
-                    <Link
-                      key={item.label}
-                      to={item.path}
-                      className="flex items-center gap-2 p-2.5 rounded-lg bg-secondary/50 hover:bg-secondary text-[13px] font-medium text-foreground transition-colors"
-                    >
-                      <span>{item.icon}</span>
-                      {item.label}
+                    <Link key={item.label} to={item.path}
+                      className="flex items-center gap-2 p-2.5 rounded-lg bg-secondary/50 hover:bg-secondary text-[13px] font-medium text-foreground transition-colors">
+                      <span>{item.icon}</span>{item.label}
                     </Link>
                   ))}
                 </div>
               </div>
 
-              {/* Footer */}
               <div className="pt-4 border-t border-border">
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  Audena Hub · India's Premier MUN Platform
-                </p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">Audena Hub · India's Premier MUN Platform</p>
                 <p className="text-[10px] text-muted-foreground/60 mt-1">© 2026 Audena Hub. All rights reserved.</p>
               </div>
             </div>
           </aside>
         </div>
       </div>
+
+      {/* Fullscreen reel */}
+      {fullscreenVideo && (
+        <FullscreenReel
+          video={fullscreenVideo}
+          isLiked={userVotes.has(fullscreenVideo.id)}
+          isBookmarked={userBookmarks.has(fullscreenVideo.id)}
+          likeCount={voteCounts[fullscreenVideo.id] || 0}
+          nameLookup={nameLookup}
+          onLike={handleLike}
+          onBookmark={handleBookmark}
+          onShare={handleShare}
+          onClose={() => setFullscreenVideo(null)}
+        />
+      )}
     </AppLayout>
   );
 };
