@@ -49,6 +49,30 @@ export type Database = {
           },
         ]
       }
+      connections: {
+        Row: {
+          created_at: string | null
+          id: string
+          receiver_id: string
+          requester_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          receiver_id: string
+          requester_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          receiver_id?: string
+          requester_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           created_at: string | null
