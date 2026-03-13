@@ -15,6 +15,7 @@ import EventRegister from "./pages/EventRegister";
 import Buzz from "./pages/Buzz";
 import Rankboard from "./pages/Rankboard";
 import Profile from "./pages/Profile";
+import PublicProfile from "./pages/PublicProfile";
 import ProfileMenu from "./pages/ProfileMenu";
 import Admin from "./pages/Admin";
 import Organizer from "./pages/Organizer";
@@ -55,6 +56,7 @@ const App = () => (
                 <Route path="/rankboard" element={<Rankboard />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/profile/:userId" element={<PublicProfile />} />
 
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/menu" element={<ProtectedRoute><ProfileMenu /></ProtectedRoute>} />

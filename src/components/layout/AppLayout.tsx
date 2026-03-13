@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Search, Globe } from "lucide-react";
+import { Search, Globe, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useState } from "react";
@@ -8,13 +8,15 @@ import SearchModal from "./SearchModal";
 import AppSidebar from "./AppSidebar";
 import NotificationDropdown from "./NotificationDropdown";
 import BottomNav from "./BottomNav";
+import BuzzUploadModal from "@/components/buzz/BuzzUploadModal";
+import { toast } from "sonner";
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const [searchOpen, setSearchOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const { user } = useAuth();
   const location = useLocation();
   const isHomePage = location.pathname === "/";
-  const isProfilePage = location.pathname === "/profile";
 
   return (
     <SidebarProvider>
@@ -28,8 +30,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
                   <SidebarTrigger className="text-foreground hover:bg-secondary" />
                 )}
                 <Button
-                  variant="ghost"
-                  size="icon"
+                  variant="ghost" size="icon"
                   className="text-muted-foreground hover:text-foreground hover:bg-secondary h-9 w-9"
                   onClick={() => setSearchOpen(true)}
                 >
@@ -37,7 +38,6 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
                 </Button>
               </div>
 
-              {/* Centered branding */}
               <Link to="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
                 <span className="text-xl font-display font-bold tracking-tight">
                   <span className="text-foreground">Audena</span><span className="text-primary">Hub</span>
@@ -45,7 +45,15 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
               </Link>
 
               <div className="flex items-center gap-1">
-                {/* Research icon */}
+                {user && (
+                  <Button
+                    variant="ghost" size="icon"
+                    className="text-muted-foreground hover:text-foreground hover:bg-secondary h-9 w-9"
+                    onClick={() => setCreateOpen(true)}
+                  >
+                    <Plus className="h-[18px] w-[18px]" />
+                  </Button>
+                )}
                 <Link to="/research">
                   <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-secondary h-9 w-9">
                     <Globe className="h-[18px] w-[18px]" />
@@ -54,9 +62,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
                 <NotificationDropdown />
                 {!user && (
                   <Link to="/auth">
-                    <Button size="sm" variant="outline" className="text-xs h-8 border-border font-semibold rounded-lg">
-                      Sign In
-                    </Button>
+                    <Button size="sm" variant="outline" className="text-xs h-8 border-border font-semibold rounded-lg">Sign In</Button>
                   </Link>
                 )}
               </div>
@@ -68,6 +74,14 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       </div>
       <BottomNav />
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+      {user && (
+        <BuzzUploadModal
+          open={createOpen}
+          onClose={() => setCreateOpen(false)}
+          onUploaded={() => { setCreateOpen(false); window.location.reload(); }}
+          userId={user.id}
+        />
+      )}
     </SidebarProvider>
   );
 };
