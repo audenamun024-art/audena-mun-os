@@ -53,21 +53,22 @@ const BuzzVideoCard = ({
     }
   }, [isVisible]);
 
-  // Double-tap to like
+  // Double-tap to like, single-tap to fullscreen
   const handleVideoTap = useCallback(() => {
     const now = Date.now();
     const timeSince = now - lastTapTime.current;
     lastTapTime.current = now;
 
     if (timeSince < 300) {
-      // Double tap - like
       if (!isLiked) onLike(video.id);
       setShowHeart(true);
       setTimeout(() => setShowHeart(false), 800);
     } else {
-      // Single tap - toggle play/pause for now, fullscreen on second thought
-      // Actually single tap opens fullscreen per requirements
-      if (onOpenFullscreen) onOpenFullscreen(video);
+      setTimeout(() => {
+        if (Date.now() - lastTapTime.current >= 280) {
+          if (onOpenFullscreen) onOpenFullscreen(video);
+        }
+      }, 300);
     }
   }, [isLiked, onLike, video, onOpenFullscreen]);
 
@@ -127,9 +128,9 @@ const BuzzVideoCard = ({
         )}
       </div>
 
-      {/* Video — Instagram Reel style */}
+      {/* Video — Instagram Reel style, responsive */}
       <div
-        className="relative bg-black aspect-[9/16] max-h-[75vh] overflow-hidden cursor-pointer select-none"
+        className="relative bg-black w-full aspect-[9/16] sm:aspect-[9/16] max-h-[80vh] overflow-hidden cursor-pointer select-none"
         onClick={handleVideoTap}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
@@ -143,7 +144,7 @@ const BuzzVideoCard = ({
             muted
             playsInline
             preload="auto"
-            className="w-full h-full object-contain"
+            className="w-full h-full object-cover"
           >
             <source src={video.video_url} />
           </video>
@@ -181,7 +182,7 @@ const BuzzVideoCard = ({
             <MessageCircle className="h-6 w-6" />
           </button>
           <button onClick={() => onShare(video)} className="text-foreground hover:text-muted-foreground">
-            <img src={sendIconImg} alt="Share" className="h-6 w-6 rounded-md object-cover" />
+            <Send className="h-6 w-6" />
           </button>
           <button onClick={() => onBookmark(video.id)} className={`ml-auto ${isBookmarked ? "text-foreground" : "text-foreground hover:text-muted-foreground"}`}>
             <Bookmark className={`h-6 w-6 ${isBookmarked ? "fill-current" : ""}`} />
@@ -236,9 +237,9 @@ const BuzzVideoCard = ({
                   }
                 }}
                 disabled={!commentDraft.trim()}
-                className="text-primary font-semibold text-[13px] disabled:opacity-30"
+                className="disabled:opacity-30 shrink-0"
               >
-                Post
+                <img src={sendIconImg} alt="Send" className="h-7 w-7 rounded-full object-cover" />
               </button>
             </div>
           )}

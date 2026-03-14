@@ -1,6 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from "react";
-import { X, Heart, MessageCircle, Bookmark } from "lucide-react";
-import sendIconImg from "@/assets/send-icon.jpg";
+import { X, Heart, MessageCircle, Bookmark, Send } from "lucide-react";
 
 type Props = {
   video: any;
@@ -68,7 +67,7 @@ const FullscreenReel = ({ video, isLiked, isBookmarked, likeCount, nameLookup, o
         onMouseDown={handleTouchStart}
         onMouseUp={handleTouchEnd}
       >
-        <video ref={videoRef} loop playsInline className="w-full h-full object-contain">
+        <video ref={videoRef} loop playsInline className="w-full h-full object-cover">
           <source src={video.video_url} />
         </video>
 
@@ -102,7 +101,7 @@ const FullscreenReel = ({ video, isLiked, isBookmarked, likeCount, nameLookup, o
             <span className="text-white text-[10px] font-semibold">{likeCount}</span>
           </button>
           <button onClick={(e) => { e.stopPropagation(); onShare(video); }} className="flex flex-col items-center gap-1">
-            <img src={sendIconImg} alt="Share" className="h-7 w-7 rounded-md object-cover" />
+            <Send className="h-7 w-7 text-white" />
             <span className="text-white text-[10px]">Share</span>
           </button>
           <button onClick={(e) => { e.stopPropagation(); onBookmark(video.id); }} className="flex flex-col items-center gap-1">
