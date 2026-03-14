@@ -185,7 +185,7 @@ const Profile = () => {
                     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarSelect} />
                     <button type="button" onClick={() => fileRef.current?.click()}
                       className="mt-1.5 w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-card px-4 py-4 text-sm text-muted-foreground hover:border-primary/40">
-                      <Upload className="h-4 w-4" /> Upload avatar
+                      <Upload className="h-4 w-4" /> Add Profile Pic
                     </button>
                   </div>
                   {[
