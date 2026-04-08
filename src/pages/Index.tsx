@@ -7,7 +7,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import buzzImg from "@/assets/buzz-placeholder.jpg";
 import BuzzVideoCard from "@/components/buzz/BuzzVideoCard";
 import FullscreenReel from "@/components/buzz/FullscreenReel";
 
@@ -24,13 +23,10 @@ const Index = () => {
   const [userBookmarks, setUserBookmarks] = useState<Set<string>>(new Set());
   const [commentsByVideo, setCommentsByVideo] = useState<CommentsByVideo>({});
   const [nameLookup, setNameLookup] = useState<NameLookup>({});
-  const [activeCategory, setActiveCategory] = useState("All");
   const [visibleVideoId, setVisibleVideoId] = useState<string | null>(null);
   const [fullscreenVideo, setFullscreenVideo] = useState<any>(null);
   const feedRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<Map<string, HTMLElement>>(new Map());
-
-  const categories = ["All", "Best Speech", "Crisis Reaction", "Debate Moment", "Award"];
 
   const fetchNamesForUsers = async (userIds: string[]) => {
     if (userIds.length === 0) return;
@@ -44,9 +40,7 @@ const Index = () => {
   };
 
   const fetchVideos = useCallback(async () => {
-    let query = supabase.from("videos").select("*").eq("flagged", false).order("created_at", { ascending: false }).limit(20);
-    if (activeCategory !== "All") query = query.eq("category", activeCategory);
-    const { data: videoRows } = await query;
+    const { data: videoRows } = await supabase.from("videos").select("*").eq("flagged", false).order("created_at", { ascending: false }).limit(20);
     const currentVideos = videoRows || [];
     setVideos(currentVideos);
 
@@ -70,7 +64,7 @@ const Index = () => {
       (commentRows || []).forEach((c: any) => c.user_id && involvedUserIds.add(c.user_id));
       await fetchNamesForUsers([...involvedUserIds]);
     }
-  }, [activeCategory]);
+  }, []);
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -93,9 +87,6 @@ const Index = () => {
     bootstrap();
   }, [user]);
 
-  useEffect(() => { fetchVideos(); }, [activeCategory, fetchVideos]);
-
-  // Intersection Observer for auto-play
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -110,7 +101,6 @@ const Index = () => {
       },
       { threshold: [0.5, 0.75, 1.0] }
     );
-
     videoRefs.current.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
   }, [videos]);
@@ -173,18 +163,7 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0 lg:gap-6">
           {/* Main Feed */}
           <div className="max-w-xl mx-auto w-full">
-            <div className="sticky top-14 z-30 bg-background/95 backdrop-blur-md border-b border-border px-4 py-3">
-              <div className="flex gap-2 overflow-x-auto no-scrollbar">
-                {categories.map((cat) => (
-                  <button key={cat} onClick={() => setActiveCategory(cat)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all border ${
-                      activeCategory === cat ? "bg-foreground text-background border-foreground" : "bg-transparent text-muted-foreground border-border hover:border-foreground/30"
-                    }`}>{cat}</button>
-                ))}
-              </div>
-            </div>
-
-            <div ref={feedRef} className="divide-y divide-border">
+            <div ref={feedRef}>
               {loading ? (
                 Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="p-4 space-y-3">
@@ -313,7 +292,6 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Fullscreen reel */}
       {fullscreenVideo && (
         <FullscreenReel
           video={fullscreenVideo}

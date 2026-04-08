@@ -115,6 +115,11 @@
     @apply border-border;
   }
 
+  html, body, #root {
+    @apply h-full;
+    overflow: auto;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }
@@ -132,6 +137,15 @@
   }
   ::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground) / 0.5);
+  }
+
+  /* Hide scrollbar for snap containers */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 
