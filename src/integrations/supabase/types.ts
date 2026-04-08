@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      buzz_interactions: {
+        Row: {
+          accurate: boolean
+          checked: boolean
+          created_at: string
+          id: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          accurate?: boolean
+          checked?: boolean
+          created_at?: string
+          id?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          accurate?: boolean
+          checked?: boolean
+          created_at?: string
+          id?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buzz_interactions_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       committees: {
         Row: {
           agenda: string | null

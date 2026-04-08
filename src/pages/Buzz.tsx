@@ -9,7 +9,6 @@ import BuzzUploadModal from "@/components/buzz/BuzzUploadModal";
 import BuzzVideoCard from "@/components/buzz/BuzzVideoCard";
 import FullscreenReel from "@/components/buzz/FullscreenReel";
 
-const categories = ["All", "Best Speech", "Crisis Reaction", "Debate Moment", "Award"];
 type CommentsByVideo = Record<string, any[]>;
 type NameLookup = Record<string, string>;
 
@@ -17,7 +16,6 @@ const Buzz = () => {
   const { user, roles } = useAuth();
   const isAdmin = roles.has("admin");
   const [showUpload, setShowUpload] = useState(false);
-  const [activeCategory, setActiveCategory] = useState("All");
   const [videos, setVideos] = useState<any[]>([]);
   const [voteCounts, setVoteCounts] = useState<Record<string, number>>({});
   const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
@@ -26,6 +24,7 @@ const Buzz = () => {
   const [nameLookup, setNameLookup] = useState<NameLookup>({});
   const [visibleVideoId, setVisibleVideoId] = useState<string | null>(null);
   const [fullscreenVideo, setFullscreenVideo] = useState<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   const fetchNamesForUsers = async (userIds: string[]) => {
@@ -42,7 +41,6 @@ const Buzz = () => {
   const fetchVideosAndComments = async () => {
     let query = supabase.from("videos").select("*").order("created_at", { ascending: false });
     if (!isAdmin) query = query.eq("flagged", false);
-    if (activeCategory !== "All") query = query.eq("category", activeCategory);
     const { data: videoRows } = await query;
     const currentVideos = videoRows || [];
     setVideos(currentVideos);
@@ -84,9 +82,6 @@ const Buzz = () => {
     bootstrap();
   }, [user]);
 
-  useEffect(() => { fetchVideosAndComments(); }, [activeCategory]);
-
-  // Intersection Observer for auto-play
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -173,38 +168,29 @@ const Buzz = () => {
 
   return (
     <AppLayout>
-      <div className="max-w-2xl mx-auto p-4 md:p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-foreground">Buzz</h1>
-            <p className="text-xs text-muted-foreground">MUN reels, speeches, crisis moments</p>
+      <div className="max-w-lg mx-auto">
+        {/* Minimal header */}
+        <div className="sticky top-14 z-30 bg-background/95 backdrop-blur-md border-b border-border px-4 py-3 flex items-center justify-between">
+          <h1 className="text-lg font-bold text-foreground">Buzz</h1>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <div className="flex items-center gap-1.5 bg-primary/10 px-2.5 py-1 rounded-full">
+                <Eye className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[10px] text-primary font-medium">Admin</span>
+              </div>
+            )}
+            <Button size="sm" className="bg-gradient-primary text-primary-foreground hover:opacity-90 h-8 text-xs rounded-full"
+              onClick={() => { if (!user) { toast.error("Sign in to upload"); return; } setShowUpload(true); }}>
+              <Plus className="h-3.5 w-3.5 mr-1" /> Create
+            </Button>
           </div>
-          <Button size="sm" className="bg-gradient-primary text-primary-foreground hover:opacity-90 h-8 text-xs"
-            onClick={() => { if (!user) { toast.error("Sign in to upload"); return; } setShowUpload(true); }}>
-            <Plus className="h-3.5 w-3.5 mr-1" /> Create
-          </Button>
         </div>
 
-        {isAdmin && (
-          <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-2 flex items-center gap-2">
-            <Eye className="h-4 w-4 text-primary" />
-            <span className="text-xs text-primary font-medium">Admin Mode — manage all videos</span>
-          </div>
-        )}
-
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {categories.map((cat) => (
-            <button key={cat} onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
-                activeCategory === cat ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
-              }`}>{cat}</button>
-          ))}
-        </div>
-
-        <div className="space-y-0 pb-6">
+        {/* Feed - snap scroll */}
+        <div ref={containerRef} className="snap-y snap-mandatory">
           {videos.length === 0 && (
-            <div className="text-center py-12">
-              <Play className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+            <div className="flex flex-col items-center justify-center py-24 text-center snap-start">
+              <Play className="h-10 w-10 text-muted-foreground/30 mb-3" />
               <p className="text-sm text-muted-foreground">No videos yet. Be the first to post!</p>
             </div>
           )}
@@ -213,6 +199,7 @@ const Buzz = () => {
               key={video.id}
               data-video-id={video.id}
               ref={(el) => { if (el) videoRefs.current.set(video.id, el); else videoRefs.current.delete(video.id); }}
+              className="snap-start"
             >
               <BuzzVideoCard
                 video={video}
