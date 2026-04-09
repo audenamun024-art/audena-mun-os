@@ -8,9 +8,11 @@ import { toast } from "sonner";
 import BuzzUploadModal from "@/components/buzz/BuzzUploadModal";
 import BuzzVideoCard from "@/components/buzz/BuzzVideoCard";
 import FullscreenReel from "@/components/buzz/FullscreenReel";
+import ShareModal from "@/components/buzz/ShareModal";
 
 type CommentsByVideo = Record<string, any[]>;
 type NameLookup = Record<string, string>;
+type InteractionState = Record<string, { accurate: boolean; checked: boolean }>;
 
 const Buzz = () => {
   const { user, roles } = useAuth();
@@ -23,7 +25,11 @@ const Buzz = () => {
   const [commentsByVideo, setCommentsByVideo] = useState<CommentsByVideo>({});
   const [nameLookup, setNameLookup] = useState<NameLookup>({});
   const [visibleVideoId, setVisibleVideoId] = useState<string | null>(null);
-  const [fullscreenVideo, setFullscreenVideo] = useState<any>(null);
+  const [fullscreenIndex, setFullscreenIndex] = useState<number | null>(null);
+  const [shareVideo, setShareVideo] = useState<any>(null);
+  const [interactions, setInteractions] = useState<InteractionState>({});
+  const [accurateCounts, setAccurateCounts] = useState<Record<string, number>>({});
+  const [checkCounts, setCheckCounts] = useState<Record<string, number>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<Map<string, HTMLElement>>(new Map());
 
@@ -48,15 +54,39 @@ const Buzz = () => {
     const videoIds = currentVideos.map((v: any) => v.id);
     if (videoIds.length === 0) { setCommentsByVideo({}); setVoteCounts({}); return; }
 
-    const [{ data: commentRows }, { data: allVotes }] = await Promise.all([
+    const [{ data: commentRows }, { data: allVotes }, { data: allInteractions }] = await Promise.all([
       supabase.from("video_comments").select("*").in("video_id", videoIds).order("created_at", { ascending: false }),
       supabase.from("votes").select("video_id").in("video_id", videoIds),
+      supabase.from("buzz_interactions").select("*").in("video_id", videoIds),
     ]);
 
+    // Vote counts
     const counts: Record<string, number> = {};
     (allVotes || []).forEach((v: any) => { counts[v.video_id] = (counts[v.video_id] || 0) + 1; });
     setVoteCounts(counts);
 
+    // Accurate/Check counts from all interactions
+    const ac: Record<string, number> = {};
+    const cc: Record<string, number> = {};
+    (allInteractions || []).forEach((i: any) => {
+      if (i.accurate) ac[i.video_id] = (ac[i.video_id] || 0) + 1;
+      if (i.checked) cc[i.video_id] = (cc[i.video_id] || 0) + 1;
+    });
+    setAccurateCounts(ac);
+    setCheckCounts(cc);
+
+    // User's own interaction states
+    if (user) {
+      const userInts: InteractionState = {};
+      (allInteractions || []).forEach((i: any) => {
+        if (i.user_id === user.id) {
+          userInts[i.video_id] = { accurate: i.accurate, checked: i.checked };
+        }
+      });
+      setInteractions(userInts);
+    }
+
+    // Comments
     const grouped: CommentsByVideo = {};
     (commentRows || []).forEach((c: any) => { if (!grouped[c.video_id]) grouped[c.video_id] = []; grouped[c.video_id].push(c); });
     setCommentsByVideo(grouped);
@@ -126,6 +156,34 @@ const Buzz = () => {
     }
   };
 
+  const handleAccurate = async (videoId: string) => {
+    if (!user) { toast.error("Sign in first"); return; }
+    const current = interactions[videoId];
+    const newVal = !(current?.accurate);
+    
+    await supabase.from("buzz_interactions").upsert(
+      { user_id: user.id, video_id: videoId, accurate: newVal, checked: current?.checked || false },
+      { onConflict: "user_id,video_id" }
+    );
+    
+    setInteractions((prev) => ({ ...prev, [videoId]: { ...prev[videoId], accurate: newVal, checked: prev[videoId]?.checked || false } }));
+    setAccurateCounts((prev) => ({ ...prev, [videoId]: Math.max(0, (prev[videoId] || 0) + (newVal ? 1 : -1)) }));
+  };
+
+  const handleCheck = async (videoId: string) => {
+    if (!user) { toast.error("Sign in first"); return; }
+    const current = interactions[videoId];
+    const newVal = !(current?.checked);
+    
+    await supabase.from("buzz_interactions").upsert(
+      { user_id: user.id, video_id: videoId, checked: newVal, accurate: current?.accurate || false },
+      { onConflict: "user_id,video_id" }
+    );
+    
+    setInteractions((prev) => ({ ...prev, [videoId]: { ...prev[videoId], checked: newVal, accurate: prev[videoId]?.accurate || false } }));
+    setCheckCounts((prev) => ({ ...prev, [videoId]: Math.max(0, (prev[videoId] || 0) + (newVal ? 1 : -1)) }));
+  };
+
   const handleCommentSubmit = async (videoId: string, content: string) => {
     if (!user) { toast.error("Sign in to comment"); return; }
     const { data, error } = await supabase.from("video_comments").insert([{ video_id: videoId, user_id: user.id, content }]).select("*").single();
@@ -138,14 +196,6 @@ const Buzz = () => {
     await supabase.from("video_comments").delete().eq("id", commentId);
     setCommentsByVideo((prev) => ({ ...prev, [videoId]: (prev[videoId] || []).filter((c: any) => c.id !== commentId) }));
     toast.success("Comment deleted");
-  };
-
-  const handleShare = async (video: any) => {
-    const shareUrl = `${window.location.origin}/buzz?video=${video.id}`;
-    try {
-      if (navigator.share) await navigator.share({ title: video.title, url: shareUrl });
-      else { await navigator.clipboard.writeText(shareUrl); toast.success("Link copied"); }
-    } catch { /* cancelled */ }
   };
 
   const handleFlagVideo = async (videoId: string) => {
@@ -169,7 +219,6 @@ const Buzz = () => {
   return (
     <AppLayout>
       <div className="max-w-lg mx-auto">
-        {/* Minimal header */}
         <div className="sticky top-14 z-30 bg-background/95 backdrop-blur-md border-b border-border px-4 py-3 flex items-center justify-between">
           <h1 className="text-lg font-bold text-foreground">Buzz</h1>
           <div className="flex items-center gap-2">
@@ -186,7 +235,6 @@ const Buzz = () => {
           </div>
         </div>
 
-        {/* Feed - snap scroll */}
         <div ref={containerRef} className="snap-y snap-mandatory">
           {videos.length === 0 && (
             <div className="flex flex-col items-center justify-center py-24 text-center snap-start">
@@ -194,7 +242,7 @@ const Buzz = () => {
               <p className="text-sm text-muted-foreground">No videos yet. Be the first to post!</p>
             </div>
           )}
-          {videos.map((video: any) => (
+          {videos.map((video: any, idx: number) => (
             <div
               key={video.id}
               data-video-id={video.id}
@@ -213,14 +261,20 @@ const Buzz = () => {
                 userId={user?.id}
                 onLike={handleLike}
                 onBookmark={handleBookmark}
-                onShare={handleShare}
+                onShare={() => setShareVideo(video)}
                 onComment={handleCommentSubmit}
                 onDeleteComment={handleDeleteComment}
                 onFlag={handleFlagVideo}
                 onUnflag={handleUnflagVideo}
                 onDelete={handleDeleteVideo}
-                onOpenFullscreen={setFullscreenVideo}
+                onOpenFullscreen={() => setFullscreenIndex(idx)}
                 isVisible={visibleVideoId === video.id}
+                accurateCount={accurateCounts[video.id] || 0}
+                isAccurate={interactions[video.id]?.accurate || false}
+                checkCount={checkCounts[video.id] || 0}
+                isChecked={interactions[video.id]?.checked || false}
+                onAccurate={handleAccurate}
+                onCheck={handleCheck}
               />
             </div>
           ))}
@@ -229,19 +283,33 @@ const Buzz = () => {
         {user && <BuzzUploadModal open={showUpload} onClose={() => setShowUpload(false)} onUploaded={() => fetchVideosAndComments()} userId={user.id} />}
       </div>
 
-      {fullscreenVideo && (
+      {fullscreenIndex !== null && (
         <FullscreenReel
-          video={fullscreenVideo}
-          isLiked={userVotes.has(fullscreenVideo.id)}
-          isBookmarked={userBookmarks.has(fullscreenVideo.id)}
-          likeCount={voteCounts[fullscreenVideo.id] || 0}
+          videos={videos}
+          startIndex={fullscreenIndex}
+          isLiked={(id) => userVotes.has(id)}
+          isBookmarked={(id) => userBookmarks.has(id)}
+          likeCount={(id) => voteCounts[id] || 0}
+          commentCount={(id) => (commentsByVideo[id] || []).length}
+          accurateCount={(id) => accurateCounts[id] || 0}
+          checkCount={(id) => checkCounts[id] || 0}
+          isAccurate={(id) => interactions[id]?.accurate || false}
+          isChecked={(id) => interactions[id]?.checked || false}
           nameLookup={nameLookup}
+          comments={(id) => commentsByVideo[id] || []}
+          userId={user?.id}
+          isAdmin={isAdmin}
           onLike={handleLike}
           onBookmark={handleBookmark}
-          onShare={handleShare}
-          onClose={() => setFullscreenVideo(null)}
+          onShare={(v) => setShareVideo(v)}
+          onComment={handleCommentSubmit}
+          onAccurate={handleAccurate}
+          onCheck={handleCheck}
+          onClose={() => setFullscreenIndex(null)}
         />
       )}
+
+      <ShareModal open={!!shareVideo} onClose={() => setShareVideo(null)} video={shareVideo} />
     </AppLayout>
   );
 };
