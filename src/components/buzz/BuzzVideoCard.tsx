@@ -1,7 +1,8 @@
 import { useRef, useEffect, useState, useCallback } from "react";
-import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Flag, Trash2, CheckCheck, CheckCircle2 } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, MoreHorizontal, Flag, Trash2, CheckCheck, CheckCircle2, Paperclip } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import sendIcon from "@/assets/send-icon.jpg";
 
 type Props = {
   video: any;
@@ -55,8 +56,8 @@ const BuzzVideoCard = ({
 
   const handleTap = useCallback(() => {
     const now = Date.now();
+    if (singleTapTimer.current) clearTimeout(singleTapTimer.current);
     if (now - lastTapTime.current < 300) {
-      if (singleTapTimer.current) clearTimeout(singleTapTimer.current);
       if (!isLiked) onLike(video.id);
       setShowHeart(true);
       setTimeout(() => setShowHeart(false), 800);
@@ -127,14 +128,7 @@ const BuzzVideoCard = ({
         onMouseDown={handleTouchStart}
         onMouseUp={handleTouchEnd}
       >
-        <video
-          ref={videoRef}
-          loop
-          playsInline
-          muted={!isVisible}
-          preload="metadata"
-          className="w-full h-full object-cover"
-        >
+        <video ref={videoRef} loop playsInline muted={!isVisible} preload="metadata" className="w-full h-full object-cover">
           <source src={video.video_url} />
         </video>
 
@@ -155,7 +149,6 @@ const BuzzVideoCard = ({
           </div>
         )}
 
-        {/* Title overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent">
           <p className="text-white text-sm font-medium">{video.title}</p>
           {video.description && <p className="text-white/70 text-xs mt-0.5 line-clamp-2">{video.description}</p>}
@@ -185,7 +178,7 @@ const BuzzVideoCard = ({
           </div>
           <div className="flex items-center gap-4">
             <button onClick={() => onShare(video)} className="text-foreground active:scale-110 transition-all">
-              <Send className="h-5 w-5" />
+              <Paperclip className="h-5 w-5" />
             </button>
             <button onClick={() => onBookmark(video.id)} className="active:scale-110 transition-all">
               <Bookmark className={`h-5 w-5 ${isBookmarked ? "text-primary fill-current" : "text-foreground"}`} />
@@ -218,8 +211,8 @@ const BuzzVideoCard = ({
               className="h-9 text-xs bg-secondary border-border rounded-full flex-1"
               onKeyDown={(e) => e.key === "Enter" && handleSubmitComment()}
             />
-            <button onClick={handleSubmitComment} className="text-primary hover:text-primary/80 shrink-0">
-              <Send className="h-4 w-4" />
+            <button onClick={handleSubmitComment} className="shrink-0">
+              <img src={sendIcon} alt="Send" className="h-5 w-5 rounded-full object-cover" />
             </button>
           </div>
         </div>
