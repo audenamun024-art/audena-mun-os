@@ -409,7 +409,7 @@ const Chats = () => {
                 <div className="flex gap-2">
                   <Input value={newMsg} onChange={(e) => setNewMsg(e.target.value)} placeholder="Type a message..." className="bg-secondary border-border h-11 rounded-xl" onKeyDown={(e) => e.key === "Enter" && void sendMessage()} />
                   <Button onClick={() => void sendMessage()} className="bg-gradient-primary text-primary-foreground h-11 w-11 p-0 rounded-xl shrink-0" disabled={!newMsg.trim() || sending}>
-                    <SendHorizonal className="h-4 w-4" />
+                    <Navigation className="h-4 w-4 fill-current" />
                   </Button>
                 </div>
               </div>
