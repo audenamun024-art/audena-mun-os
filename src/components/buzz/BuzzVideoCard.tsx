@@ -160,28 +160,28 @@ const BuzzVideoCard = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-5">
             <button onClick={() => onLike(video.id)} className="flex items-center gap-1.5 group">
-              <Heart className={`h-6 w-6 transition-all group-active:scale-125 ${isLiked ? "text-destructive fill-current" : "text-foreground"}`} />
-              <span className="text-xs font-semibold text-foreground">{likeCount}</span>
+              <Heart className={`h-6 w-6 transition-all duration-300 ease-out group-active:scale-150 ${isLiked ? "text-destructive fill-current animate-[pulse_0.4s_ease-in-out]" : "text-foreground hover:text-destructive/60"}`} />
+              <span className={`text-xs font-semibold transition-all duration-200 ${isLiked ? "text-destructive" : "text-foreground"}`}>{likeCount}</span>
             </button>
             <button onClick={() => setShowComments(!showComments)} className="flex items-center gap-1.5 group">
-              <MessageCircle className="h-6 w-6 text-foreground group-active:scale-110 transition-all" />
+              <MessageCircle className={`h-6 w-6 transition-all duration-300 group-active:scale-125 ${showComments ? "text-primary fill-current" : "text-foreground hover:text-primary/60"}`} />
               <span className="text-xs font-semibold text-foreground">{comments.length}</span>
             </button>
             <button onClick={() => onAccurate?.(video.id)} className="flex items-center gap-1.5 group">
-              <CheckCheck className={`h-6 w-6 transition-all group-active:scale-110 ${isAccurate ? "text-primary" : "text-foreground"}`} />
-              <span className="text-xs font-semibold text-foreground">{accurateCount}</span>
+              <CheckCheck className={`h-6 w-6 transition-all duration-300 ease-out group-active:scale-150 ${isAccurate ? "text-primary animate-[pulse_0.4s_ease-in-out]" : "text-foreground hover:text-primary/60"}`} />
+              <span className={`text-xs font-semibold transition-all duration-200 ${isAccurate ? "text-primary" : "text-foreground"}`}>{accurateCount}</span>
             </button>
             <button onClick={() => onCheck?.(video.id)} className="flex items-center gap-1.5 group">
-              <CheckCircle2 className={`h-6 w-6 transition-all group-active:scale-110 ${isChecked ? "text-green-500 fill-current" : "text-foreground"}`} />
-              <span className="text-xs font-semibold text-foreground">{checkCount}</span>
+              <CheckCircle2 className={`h-6 w-6 transition-all duration-300 ease-out group-active:scale-150 ${isChecked ? "text-green-500 fill-current animate-[pulse_0.4s_ease-in-out]" : "text-foreground hover:text-green-500/60"}`} />
+              <span className={`text-xs font-semibold transition-all duration-200 ${isChecked ? "text-green-500" : "text-foreground"}`}>{checkCount}</span>
             </button>
           </div>
           <div className="flex items-center gap-4">
-            <button onClick={() => onShare(video)} className="text-foreground active:scale-110 transition-all">
+            <button onClick={() => onShare(video)} className="text-foreground hover:text-primary active:scale-125 transition-all duration-200">
               <Paperclip className="h-5 w-5" />
             </button>
-            <button onClick={() => onBookmark(video.id)} className="active:scale-110 transition-all">
-              <Bookmark className={`h-5 w-5 ${isBookmarked ? "text-primary fill-current" : "text-foreground"}`} />
+            <button onClick={() => onBookmark(video.id)} className="active:scale-125 transition-all duration-200">
+              <Bookmark className={`h-5 w-5 transition-all duration-300 ${isBookmarked ? "text-primary fill-current animate-[pulse_0.4s_ease-in-out]" : "text-foreground hover:text-primary/60"}`} />
             </button>
           </div>
         </div>

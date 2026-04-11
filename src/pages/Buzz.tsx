@@ -112,6 +112,45 @@ const Buzz = () => {
     bootstrap();
   }, [user]);
 
+  // Realtime subscriptions for buzz_interactions, votes, and comments
+  useEffect(() => {
+    const channel = supabase
+      .channel("buzz-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "buzz_interactions" }, (payload: any) => {
+        const row = payload.new;
+        if (!row || row.user_id === user?.id) return;
+        if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+          setAccurateCounts((prev) => {
+            const vid = row.video_id;
+            // Recalc would be ideal but for live feel, just adjust
+            return prev;
+          });
+          // Refetch counts for accuracy
+          void fetchVideosAndComments();
+        }
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "votes" }, (payload: any) => {
+        const row = payload.new || payload.old;
+        if (!row || row.user_id === user?.id) return;
+        if (payload.eventType === "INSERT") {
+          setVoteCounts((prev) => ({ ...prev, [row.video_id]: (prev[row.video_id] || 0) + 1 }));
+        } else if (payload.eventType === "DELETE") {
+          setVoteCounts((prev) => ({ ...prev, [row.video_id]: Math.max(0, (prev[row.video_id] || 1) - 1) }));
+        }
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "video_comments" }, (payload: any) => {
+        const row = payload.new;
+        if (!row || row.user_id === user?.id) return;
+        setCommentsByVideo((prev) => ({ ...prev, [row.video_id]: [row, ...(prev[row.video_id] || [])] }));
+        if (row.user_id && !nameLookup[row.user_id]) {
+          void fetchNamesForUsers([row.user_id]);
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id]);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
