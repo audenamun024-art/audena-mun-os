@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
-import { MessageCircle, Search, ArrowLeft, Check, CheckCheck, Navigation } from "lucide-react";
+import { MessageCircle, Search, ArrowLeft, Check, CheckCheck, Redo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
