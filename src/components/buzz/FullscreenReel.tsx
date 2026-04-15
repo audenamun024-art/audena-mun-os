@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from "react";
-import { X, Heart, MessageCircle, Bookmark, Paperclip, CheckCheck, CheckCircle2 } from "lucide-react";
+import { X, Heart, MessageCircle, Bookmark, Paperclip, CheckCheck, AlertTriangle, Redo2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 type Props = {
@@ -182,30 +182,54 @@ const FullscreenReel = ({
             </div>
 
             {/* Right actions */}
-            <div className="absolute right-3 bottom-24 flex flex-col items-center gap-5 z-20">
-              <button onClick={(e) => { e.stopPropagation(); onLike(video.id); }} className="flex flex-col items-center gap-1">
-                <Heart className={`h-7 w-7 ${isLiked(video.id) ? "text-destructive fill-current" : "text-white"} transition-all active:scale-125`} />
+            <div className="absolute right-3 bottom-36 flex flex-col items-center gap-5 z-20">
+              <button onClick={(e) => { e.stopPropagation(); onLike(video.id); }} className="flex flex-col items-center gap-1 active:scale-125 transition-transform">
+                <Heart className={`h-7 w-7 ${isLiked(video.id) ? "text-destructive fill-current" : "text-white"} transition-all`} />
                 <span className="text-white text-[10px] font-semibold">{likeCount(video.id)}</span>
               </button>
-              <button onClick={(e) => { e.stopPropagation(); setShowComments(!showComments); }} className="flex flex-col items-center gap-1">
+              <button onClick={(e) => { e.stopPropagation(); setShowComments(!showComments); }} className="flex flex-col items-center gap-1 active:scale-125 transition-transform">
                 <MessageCircle className="h-7 w-7 text-white" />
                 <span className="text-white text-[10px]">{commentCount(video.id)}</span>
               </button>
-              <button onClick={(e) => { e.stopPropagation(); onAccurate(video.id); }} className="flex flex-col items-center gap-1">
-                <CheckCheck className={`h-7 w-7 transition-all ${isAccurate(video.id) ? "text-primary" : "text-white"}`} />
-                <span className="text-white text-[10px]">{accurateCount(video.id)}</span>
-              </button>
-              <button onClick={(e) => { e.stopPropagation(); onCheck(video.id); }} className="flex flex-col items-center gap-1">
-                <CheckCircle2 className={`h-7 w-7 transition-all ${isChecked(video.id) ? "text-green-400 fill-current" : "text-white"}`} />
-                <span className="text-white text-[10px]">{checkCount(video.id)}</span>
-              </button>
-              <button onClick={(e) => { e.stopPropagation(); onShare(video); }} className="flex flex-col items-center gap-1">
+              <button onClick={(e) => { e.stopPropagation(); onShare(video); }} className="flex flex-col items-center gap-1 active:scale-125 transition-transform">
                 <Paperclip className="h-7 w-7 text-white" />
                 <span className="text-white text-[10px]">Share</span>
               </button>
-              <button onClick={(e) => { e.stopPropagation(); onBookmark(video.id); }} className="flex flex-col items-center gap-1">
-                <Bookmark className={`h-7 w-7 ${isBookmarked(video.id) ? "text-primary fill-current" : "text-white"}`} />
+              <button onClick={(e) => { e.stopPropagation(); onBookmark(video.id); }} className="flex flex-col items-center gap-1 active:scale-125 transition-transform">
+                <Bookmark className={`h-7 w-7 ${isBookmarked(video.id) ? "text-primary fill-current" : "text-white"} transition-all`} />
                 <span className="text-white text-[10px]">Save</span>
+              </button>
+            </div>
+
+            {/* Bottom Accurate / Needs Check buttons */}
+            <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-4 z-20 px-4">
+              <button
+                onClick={(e) => { e.stopPropagation(); onAccurate(video.id); }}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-full backdrop-blur-md transition-all duration-300 active:scale-95 ${
+                  isAccurate(video.id)
+                    ? "bg-green-500/30 border border-green-400/50"
+                    : "bg-white/10 border border-white/20 hover:bg-white/15"
+                }`}
+              >
+                <CheckCheck className={`h-5 w-5 transition-all duration-300 ${isAccurate(video.id) ? "text-green-400" : "text-white/80"}`} />
+                <span className={`text-xs font-medium transition-colors duration-300 ${isAccurate(video.id) ? "text-green-400" : "text-white/80"}`}>
+                  Accurate
+                </span>
+                <span className={`text-[10px] ml-0.5 ${isAccurate(video.id) ? "text-green-300" : "text-white/50"}`}>{accurateCount(video.id)}</span>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onCheck(video.id); }}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-full backdrop-blur-md transition-all duration-300 active:scale-95 ${
+                  isChecked(video.id)
+                    ? "bg-amber-500/30 border border-amber-400/50"
+                    : "bg-white/10 border border-white/20 hover:bg-white/15"
+                }`}
+              >
+                <AlertTriangle className={`h-5 w-5 transition-all duration-300 ${isChecked(video.id) ? "text-amber-400" : "text-white/80"}`} />
+                <span className={`text-xs font-medium transition-colors duration-300 ${isChecked(video.id) ? "text-amber-400" : "text-white/80"}`}>
+                  Needs Check
+                </span>
+                <span className={`text-[10px] ml-0.5 ${isChecked(video.id) ? "text-amber-300" : "text-white/50"}`}>{checkCount(video.id)}</span>
               </button>
             </div>
           </div>
@@ -245,7 +269,13 @@ const FullscreenReel = ({
               className="flex-1 h-9 text-xs rounded-full bg-secondary"
               onKeyDown={(e) => e.key === "Enter" && handleSubmitComment()}
             />
-            <button onClick={handleSubmitComment} className="text-primary font-semibold text-xs">Post</button>
+            <button
+              onClick={handleSubmitComment}
+              disabled={!commentText.trim()}
+              className="shrink-0 transition-all duration-200"
+            >
+              <Redo2 className={`h-5 w-5 transition-colors duration-200 ${commentText.trim() ? "text-white" : "text-[#A0A0A0] opacity-50"}`} />
+            </button>
           </div>
         </div>
       )}
