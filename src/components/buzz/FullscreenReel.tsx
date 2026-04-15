@@ -44,7 +44,6 @@ const FullscreenReel = ({
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
-    // Scroll to start video
     setTimeout(() => {
       containerRef.current?.children[startIndex]?.scrollIntoView({ behavior: "auto" });
     }, 50);
@@ -67,7 +66,6 @@ const FullscreenReel = ({
       },
       { threshold: [0.7], root: containerRef.current }
     );
-
     containerRef.current?.querySelectorAll("[data-idx]").forEach((el) => observer.observe(el));
     return () => observer.disconnect();
   }, [videos]);
@@ -77,9 +75,7 @@ const FullscreenReel = ({
   const handleTap = useCallback((videoId: string) => {
     const now = Date.now();
     if (singleTapTimer.current) clearTimeout(singleTapTimer.current);
-
     if (now - lastTapTime.current < 300) {
-      // Double tap = like
       if (!isLiked(videoId)) onLike(videoId);
       setShowHeart(videoId);
       setTimeout(() => setShowHeart(null), 800);
@@ -87,7 +83,6 @@ const FullscreenReel = ({
     } else {
       lastTapTime.current = now;
       singleTapTimer.current = setTimeout(() => {
-        // Single tap = toggle pause
         const vid = videoRefs.current.get(videoId);
         if (vid) {
           if (vid.paused) { vid.play().catch(() => {}); setIsPaused(false); }
@@ -174,63 +169,68 @@ const FullscreenReel = ({
               </div>
             )}
 
-            {/* Bottom info */}
-            <div className="absolute bottom-0 left-0 right-16 p-4 pb-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
-              <p className="text-white font-semibold text-sm">{nameLookup[video.user_id] || "Delegate"}</p>
-              <p className="text-white/80 text-xs mt-1">{video.title}</p>
-              {video.description && <p className="text-white/60 text-[11px] mt-0.5 line-clamp-2">{video.description}</p>}
-            </div>
-
-            {/* Right actions */}
-            <div className="absolute right-3 bottom-36 flex flex-col items-center gap-5 z-20">
+            {/* Right actions - positioned above the bottom section */}
+            <div className="absolute right-3 bottom-[140px] sm:bottom-[160px] flex flex-col items-center gap-4 sm:gap-5 z-20">
               <button onClick={(e) => { e.stopPropagation(); onLike(video.id); }} className="flex flex-col items-center gap-1 active:scale-125 transition-transform">
-                <Heart className={`h-7 w-7 ${isLiked(video.id) ? "text-destructive fill-current" : "text-white"} transition-all`} />
+                <Heart className={`h-6 w-6 sm:h-7 sm:w-7 ${isLiked(video.id) ? "text-destructive fill-current" : "text-white"} transition-all`} />
                 <span className="text-white text-[10px] font-semibold">{likeCount(video.id)}</span>
               </button>
               <button onClick={(e) => { e.stopPropagation(); setShowComments(!showComments); }} className="flex flex-col items-center gap-1 active:scale-125 transition-transform">
-                <MessageCircle className="h-7 w-7 text-white" />
+                <MessageCircle className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
                 <span className="text-white text-[10px]">{commentCount(video.id)}</span>
               </button>
               <button onClick={(e) => { e.stopPropagation(); onShare(video); }} className="flex flex-col items-center gap-1 active:scale-125 transition-transform">
-                <Paperclip className="h-7 w-7 text-white" />
+                <Paperclip className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
                 <span className="text-white text-[10px]">Share</span>
               </button>
               <button onClick={(e) => { e.stopPropagation(); onBookmark(video.id); }} className="flex flex-col items-center gap-1 active:scale-125 transition-transform">
-                <Bookmark className={`h-7 w-7 ${isBookmarked(video.id) ? "text-primary fill-current" : "text-white"} transition-all`} />
+                <Bookmark className={`h-6 w-6 sm:h-7 sm:w-7 ${isBookmarked(video.id) ? "text-primary fill-current" : "text-white"} transition-all`} />
                 <span className="text-white text-[10px]">Save</span>
               </button>
             </div>
 
-            {/* Bottom Accurate / Needs Check buttons */}
-            <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-4 z-20 px-4">
-              <button
-                onClick={(e) => { e.stopPropagation(); onAccurate(video.id); }}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-full backdrop-blur-md transition-all duration-300 active:scale-95 ${
-                  isAccurate(video.id)
-                    ? "bg-green-500/30 border border-green-400/50"
-                    : "bg-white/10 border border-white/20 hover:bg-white/15"
-                }`}
-              >
-                <CheckCheck className={`h-5 w-5 transition-all duration-300 ${isAccurate(video.id) ? "text-green-400" : "text-white/80"}`} />
-                <span className={`text-xs font-medium transition-colors duration-300 ${isAccurate(video.id) ? "text-green-400" : "text-white/80"}`}>
-                  Accurate
-                </span>
-                <span className={`text-[10px] ml-0.5 ${isAccurate(video.id) ? "text-green-300" : "text-white/50"}`}>{accurateCount(video.id)}</span>
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); onCheck(video.id); }}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-full backdrop-blur-md transition-all duration-300 active:scale-95 ${
-                  isChecked(video.id)
-                    ? "bg-amber-500/30 border border-amber-400/50"
-                    : "bg-white/10 border border-white/20 hover:bg-white/15"
-                }`}
-              >
-                <AlertTriangle className={`h-5 w-5 transition-all duration-300 ${isChecked(video.id) ? "text-amber-400" : "text-white/80"}`} />
-                <span className={`text-xs font-medium transition-colors duration-300 ${isChecked(video.id) ? "text-amber-400" : "text-white/80"}`}>
-                  Needs Check
-                </span>
-                <span className={`text-[10px] ml-0.5 ${isChecked(video.id) ? "text-amber-300" : "text-white/50"}`}>{checkCount(video.id)}</span>
-              </button>
+            {/* Bottom overlay: caption + pills stacked vertically */}
+            <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none">
+              <div className="bg-gradient-to-t from-black/80 via-black/50 to-transparent pt-16 pb-3 px-4">
+                {/* Caption area */}
+                <div className="pr-14 mb-3 pointer-events-auto">
+                  <p className="text-white font-semibold text-sm">{nameLookup[video.user_id] || "Delegate"}</p>
+                  <p className="text-white/80 text-xs mt-1 line-clamp-1">{video.title}</p>
+                  {video.description && <p className="text-white/60 text-[11px] mt-0.5 line-clamp-2">{video.description}</p>}
+                </div>
+
+                {/* Accurate / Needs Check pills */}
+                <div className="flex items-center justify-center gap-2 sm:gap-3 pointer-events-auto">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onAccurate(video.id); }}
+                    className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-full backdrop-blur-md transition-all duration-300 active:scale-95 text-[11px] sm:text-xs ${
+                      isAccurate(video.id)
+                        ? "bg-green-500/25 border border-green-400/40"
+                        : "bg-white/10 border border-white/15"
+                    }`}
+                  >
+                    <CheckCheck className={`h-4 w-4 transition-all duration-300 ${isAccurate(video.id) ? "text-green-400" : "text-white/70"}`} />
+                    <span className={`font-medium transition-colors duration-300 ${isAccurate(video.id) ? "text-green-400" : "text-white/70"}`}>
+                      Accurate
+                    </span>
+                    <span className={`text-[10px] ${isAccurate(video.id) ? "text-green-300" : "text-white/40"}`}>{accurateCount(video.id)}</span>
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onCheck(video.id); }}
+                    className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-full backdrop-blur-md transition-all duration-300 active:scale-95 text-[11px] sm:text-xs ${
+                      isChecked(video.id)
+                        ? "bg-amber-500/25 border border-amber-400/40"
+                        : "bg-white/10 border border-white/15"
+                    }`}
+                  >
+                    <AlertTriangle className={`h-4 w-4 transition-all duration-300 ${isChecked(video.id) ? "text-amber-400" : "text-white/70"}`} />
+                    <span className={`font-medium transition-colors duration-300 ${isChecked(video.id) ? "text-amber-400" : "text-white/70"}`}>
+                      Needs Check
+                    </span>
+                    <span className={`text-[10px] ${isChecked(video.id) ? "text-amber-300" : "text-white/40"}`}>{checkCount(video.id)}</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         ))}
