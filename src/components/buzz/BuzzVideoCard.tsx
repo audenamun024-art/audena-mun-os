@@ -1,8 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from "react";
-import { Heart, MessageCircle, Bookmark, MoreHorizontal, Flag, Trash2, CheckCheck, CheckCircle2, Paperclip } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, MoreHorizontal, Flag, Trash2, CheckCheck, CheckCircle2, Paperclip, Redo2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import sendIcon from "@/assets/send-icon.jpg";
 
 type Props = {
   video: any;
@@ -211,8 +210,12 @@ const BuzzVideoCard = ({
               className="h-9 text-xs bg-secondary border-border rounded-full flex-1"
               onKeyDown={(e) => e.key === "Enter" && handleSubmitComment()}
             />
-            <button onClick={handleSubmitComment} className="shrink-0">
-              <img src={sendIcon} alt="Send" className="h-5 w-5 rounded-full object-cover" />
+            <button
+              onClick={handleSubmitComment}
+              disabled={!commentText.trim()}
+              className="shrink-0 transition-all duration-200"
+            >
+              <Redo2 className={`h-5 w-5 transition-colors duration-200 ${commentText.trim() ? "text-white" : "text-[#A0A0A0] opacity-50"}`} />
             </button>
           </div>
         </div>
