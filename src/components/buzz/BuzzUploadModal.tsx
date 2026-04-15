@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { X, Upload, Video, Check } from "lucide-react";
+import { X, Upload, Video, Check, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,8 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 
-const categories = ["Best Speech", "Crisis Reaction", "Debate Moment", "Award"];
-const MAX_FILE_SIZE_MB = 100;
+const categories = ["Best Speech", "Crisis Reaction", "Debate Moment", "Award", "Behind the Scenes"];
+const MAX_FILE_SIZE_MB = 150;
 
 type Props = {
   open: boolean;
@@ -20,7 +20,8 @@ type Props = {
 
 const BuzzUploadModal = ({ open, onClose, onUploaded, userId }: Props) => {
   const [title, setTitle] = useState("");
-  const [caption, setCaption] = useState("");
+  const [description, setDescription] = useState("");
+  const [hashtags, setHashtags] = useState("");
   const [category, setCategory] = useState("Best Speech");
   const [file, setFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
@@ -34,7 +35,7 @@ const BuzzUploadModal = ({ open, onClose, onUploaded, userId }: Props) => {
     const selected = e.target.files?.[0];
     if (!selected) return;
     if (selected.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-      toast.error(`Max file size is ${MAX_FILE_SIZE_MB}MB`);
+      toast.error(`Max file size is ${MAX_FILE_SIZE_MB}MB (~3 min video)`);
       return;
     }
     setFile(selected);
@@ -47,6 +48,15 @@ const BuzzUploadModal = ({ open, onClose, onUploaded, userId }: Props) => {
     const reader = new FileReader();
     reader.onloadend = () => setThumbnailPreview(reader.result as string);
     reader.readAsDataURL(selected);
+  };
+
+  const formatHashtags = (raw: string): string => {
+    return raw
+      .split(/[\s,]+/)
+      .map((tag) => tag.replace(/^#*/, "").trim())
+      .filter(Boolean)
+      .map((tag) => `#${tag}`)
+      .join(" ");
   };
 
   const handleUpload = async () => {
@@ -80,9 +90,14 @@ const BuzzUploadModal = ({ open, onClose, onUploaded, userId }: Props) => {
       }
       setProgress(75);
 
+      // Build description with hashtags
+      const formattedTags = formatHashtags(hashtags);
+      const fullDescription = [description.trim(), formattedTags].filter(Boolean).join("\n\n");
+
       const { error: insertErr } = await supabase.from("videos").insert({
         user_id: userId,
-        title: `${title.trim()}${caption.trim() ? ` — ${caption.trim()}` : ""}`,
+        title: title.trim(),
+        description: fullDescription || null,
         video_url: videoUrl,
         thumbnail_url: thumbnailUrl,
         category,
@@ -90,6 +105,7 @@ const BuzzUploadModal = ({ open, onClose, onUploaded, userId }: Props) => {
       if (insertErr) throw insertErr;
       setProgress(90);
 
+      // Award points for buzz task
       const { data: tasks } = await supabase
         .from("user_tasks").select("id, points").eq("active", true).eq("category", "buzz").limit(1);
       if (tasks && tasks.length > 0) {
@@ -118,7 +134,7 @@ const BuzzUploadModal = ({ open, onClose, onUploaded, userId }: Props) => {
   };
 
   const resetForm = () => {
-    setTitle(""); setCaption(""); setCategory("Best Speech");
+    setTitle(""); setDescription(""); setHashtags(""); setCategory("Best Speech");
     setFile(null); setThumbnailFile(null); setThumbnailPreview(null);
     setProgress(0); setDone(false);
   };
@@ -128,15 +144,16 @@ const BuzzUploadModal = ({ open, onClose, onUploaded, userId }: Props) => {
   return (
     <>
       <div className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed inset-x-4 top-[10%] z-[95] max-w-lg mx-auto bg-card rounded-2xl border border-border shadow-elevated overflow-hidden max-h-[80vh] overflow-y-auto">
+      <div className="fixed inset-x-4 top-[5%] z-[95] max-w-lg mx-auto bg-card rounded-2xl border border-border shadow-elevated overflow-hidden max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="font-display text-base font-bold text-foreground">Create Buzz Post</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
         </div>
 
         <div className="p-4 space-y-4">
+          {/* Video File */}
           <div>
-            <Label className="text-xs text-muted-foreground mb-2 block">Video File *</Label>
+            <Label className="text-xs text-muted-foreground mb-2 block">Video File * (max {MAX_FILE_SIZE_MB}MB / ~3 min)</Label>
             <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={handleFileSelect} />
             {file ? (
               <div className="flex items-center gap-3 p-3 bg-secondary rounded-xl border border-border">
@@ -150,11 +167,12 @@ const BuzzUploadModal = ({ open, onClose, onUploaded, userId }: Props) => {
             ) : (
               <button onClick={() => fileRef.current?.click()} className="w-full border-2 border-dashed border-border rounded-xl p-6 flex flex-col items-center gap-2 hover:border-primary/50 transition-colors">
                 <Upload className="h-8 w-8 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Tap to select video (max {MAX_FILE_SIZE_MB}MB)</p>
+                <p className="text-sm text-muted-foreground">Tap to select video</p>
               </button>
             )}
           </div>
 
+          {/* Thumbnail */}
           <div>
             <Label className="text-xs text-muted-foreground mb-2 block">Thumbnail (optional)</Label>
             <label className="cursor-pointer">
@@ -162,22 +180,48 @@ const BuzzUploadModal = ({ open, onClose, onUploaded, userId }: Props) => {
               {thumbnailPreview ? (
                 <img src={thumbnailPreview} alt="Thumbnail" className="w-full h-32 object-cover rounded-xl border border-border" />
               ) : (
-                <div className="w-full h-20 border border-dashed border-border rounded-xl flex items-center justify-center hover:border-primary/50 transition-colors">
+                <div className="w-full h-16 border border-dashed border-border rounded-xl flex items-center justify-center hover:border-primary/50 transition-colors">
                   <p className="text-xs text-muted-foreground">+ Add cover image</p>
                 </div>
               )}
             </label>
           </div>
 
+          {/* Title */}
           <div>
             <Label className="text-xs text-muted-foreground">Title *</Label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Best speech on climate action" className="mt-1 bg-secondary border-border" />
-          </div>
-          <div>
-            <Label className="text-xs text-muted-foreground">Caption</Label>
-            <Textarea value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Share context about your video..." className="mt-1 bg-secondary border-border min-h-[60px]" />
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Best speech on climate action" className="mt-1 bg-secondary border-border" maxLength={100} />
+            <p className="text-[10px] text-muted-foreground text-right mt-0.5">{title.length}/100</p>
           </div>
 
+          {/* Caption / Description */}
+          <div>
+            <Label className="text-xs text-muted-foreground">Caption</Label>
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Share context about your video..."
+              className="mt-1 bg-secondary border-border min-h-[70px] resize-none"
+              maxLength={500}
+            />
+            <p className="text-[10px] text-muted-foreground text-right mt-0.5">{description.length}/500</p>
+          </div>
+
+          {/* Hashtags */}
+          <div>
+            <Label className="text-xs text-muted-foreground flex items-center gap-1">
+              <Hash className="h-3 w-3" /> Hashtags
+            </Label>
+            <Input
+              value={hashtags}
+              onChange={(e) => setHashtags(e.target.value)}
+              placeholder="mun, debate, diplomacy, climateaction"
+              className="mt-1 bg-secondary border-border"
+            />
+            <p className="text-[10px] text-muted-foreground mt-0.5">Separate with commas or spaces</p>
+          </div>
+
+          {/* Category */}
           <div>
             <Label className="text-xs text-muted-foreground mb-2 block">Category</Label>
             <div className="flex flex-wrap gap-2">
@@ -190,6 +234,7 @@ const BuzzUploadModal = ({ open, onClose, onUploaded, userId }: Props) => {
             </div>
           </div>
 
+          {/* Progress */}
           {uploading && (
             <div className="space-y-2">
               <Progress value={progress} className="h-2" />
