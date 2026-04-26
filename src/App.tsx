@@ -2,46 +2,32 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import RequireAuth from "@/components/auth/RequireAuth";
 import Index from "./pages/Index";
-import Events from "./pages/Events";
-import EventDetail from "./pages/EventDetail";
-import EventCreate from "./pages/EventCreate";
-import EventRegister from "./pages/EventRegister";
 import Buzz from "./pages/Buzz";
-import Rankboard from "./pages/Rankboard";
+import Explore from "./pages/Explore";
 import Profile from "./pages/Profile";
 import PublicProfile from "./pages/PublicProfile";
 import ProfileMenu from "./pages/ProfileMenu";
 import Admin from "./pages/Admin";
-import Organizer from "./pages/Organizer";
-import OrganizerRegister from "./pages/OrganizerRegister";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
-import CrisisMode from "./pages/CrisisMode";
-import ResearchBrowser from "./pages/ResearchBrowser";
 import Chats from "./pages/Chats";
-import OrganizerProfile from "./pages/OrganizerProfile";
-import EBMarksheet from "./pages/EBMarksheet";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 30_000,
-      refetchOnWindowFocus: false,
-    },
+    queries: { retry: 1, staleTime: 30_000, refetchOnWindowFocus: false },
   },
 });
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
       <AuthProvider>
         <TooltipProvider>
           <ErrorBoundary>
@@ -49,29 +35,19 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/events" element={<Events />} />
-                <Route path="/events/:id" element={<EventDetail />} />
-                <Route path="/buzz" element={<Buzz />} />
-                <Route path="/rankboard" element={<Rankboard />} />
+                {/* Public auth routes */}
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/profile/:userId" element={<PublicProfile />} />
 
-                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                <Route path="/menu" element={<ProtectedRoute><ProfileMenu /></ProtectedRoute>} />
-                <Route path="/chats" element={<ProtectedRoute><Chats /></ProtectedRoute>} />
-                <Route path="/events/:id/register" element={<ProtectedRoute><EventRegister /></ProtectedRoute>} />
-                <Route path="/research" element={<ProtectedRoute><ResearchBrowser /></ProtectedRoute>} />
-                <Route path="/organizer/register" element={<ProtectedRoute><OrganizerRegister /></ProtectedRoute>} />
-
-                <Route path="/events/create" element={<ProtectedRoute requiredRole="organizer"><EventCreate /></ProtectedRoute>} />
-                <Route path="/organizer" element={<ProtectedRoute requiredRole="organizer"><Navigate to="/organizer/profile" replace /></ProtectedRoute>} />
-                <Route path="/organizer/profile" element={<ProtectedRoute requiredRole="organizer"><OrganizerProfile /></ProtectedRoute>} />
-                <Route path="/organizer/dashboard" element={<ProtectedRoute requiredRole="organizer"><Organizer /></ProtectedRoute>} />
-                <Route path="/crisis" element={<ProtectedRoute requiredRole="eb"><CrisisMode /></ProtectedRoute>} />
-                <Route path="/eb/marksheet" element={<ProtectedRoute requiredRole="eb"><EBMarksheet /></ProtectedRoute>} />
-                <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><Admin /></ProtectedRoute>} />
+                {/* Hard gate — everything else requires login */}
+                <Route path="/" element={<RequireAuth><Index /></RequireAuth>} />
+                <Route path="/buzz" element={<RequireAuth><Buzz /></RequireAuth>} />
+                <Route path="/explore" element={<RequireAuth><Explore /></RequireAuth>} />
+                <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
+                <Route path="/profile/:userId" element={<RequireAuth><PublicProfile /></RequireAuth>} />
+                <Route path="/menu" element={<RequireAuth><ProfileMenu /></RequireAuth>} />
+                <Route path="/chats" element={<RequireAuth><Chats /></RequireAuth>} />
+                <Route path="/admin" element={<RequireAuth requireAdmin><Admin /></RequireAuth>} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>

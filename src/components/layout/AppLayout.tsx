@@ -1,29 +1,27 @@
-import { Link, useLocation } from "react-router-dom";
-import { Search, Globe, Plus } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Compass, Plus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import SearchModal from "./SearchModal";
 import AppSidebar from "./AppSidebar";
 import NotificationDropdown from "./NotificationDropdown";
 import BottomNav from "./BottomNav";
 import BuzzUploadModal from "@/components/buzz/BuzzUploadModal";
-import { toast } from "sonner";
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
-  const [searchOpen, setSearchOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const isHomePage = location.pathname === "/";
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border">
+          <header className="sticky top-0 z-40 glass-panel border-b border-border">
             <div className="flex items-center justify-between px-4 h-14">
               <div className="flex items-center gap-2">
                 {!isHomePage && (
@@ -31,16 +29,17 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
                 )}
                 <Button
                   variant="ghost" size="icon"
-                  className="text-muted-foreground hover:text-foreground hover:bg-secondary h-9 w-9"
-                  onClick={() => setSearchOpen(true)}
+                  className="text-muted-foreground hover:text-primary hover:bg-secondary h-9 w-9"
+                  onClick={() => navigate("/explore")}
                 >
-                  <Search className="h-[18px] w-[18px]" />
+                  <Compass className="h-[18px] w-[18px]" />
                 </Button>
               </div>
 
               <Link to="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
-                <span className="text-xl font-display font-bold tracking-tight">
-                  <span className="text-foreground">Audena</span><span className="text-primary">Hub</span>
+                <Sparkles className="h-4 w-4 text-primary" />
+                <span className="text-lg font-display font-bold tracking-tight">
+                  <span className="text-foreground">Audena</span><span className="text-gradient-primary">Hub</span>
                 </span>
               </Link>
 
@@ -48,23 +47,13 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
                 {user && (
                   <Button
                     variant="ghost" size="icon"
-                    className="text-muted-foreground hover:text-foreground hover:bg-secondary h-9 w-9"
+                    className="text-muted-foreground hover:text-primary hover:bg-secondary h-9 w-9"
                     onClick={() => setCreateOpen(true)}
                   >
                     <Plus className="h-[18px] w-[18px]" />
                   </Button>
                 )}
-                <Link to="/research">
-                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-secondary h-9 w-9">
-                    <Globe className="h-[18px] w-[18px]" />
-                  </Button>
-                </Link>
                 <NotificationDropdown />
-                {!user && (
-                  <Link to="/auth">
-                    <Button size="sm" variant="outline" className="text-xs h-8 border-border font-semibold rounded-lg">Sign In</Button>
-                  </Link>
-                )}
               </div>
             </div>
           </header>
@@ -73,7 +62,6 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </div>
       <BottomNav />
-      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
       {user && (
         <BuzzUploadModal
           open={createOpen}

@@ -1,9 +1,9 @@
-import { Home, Calendar, Play, MessageCircle, User } from "lucide-react";
+import { Home, Compass, Play, MessageCircle, User } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 
 const tabs = [
   { label: "Home", path: "/", icon: Home, end: true },
-  { label: "Events", path: "/events", icon: Calendar },
+  { label: "Explore", path: "/explore", icon: Compass },
   { label: "Buzz", path: "/buzz", icon: Play },
   { label: "Chats", path: "/chats", icon: MessageCircle },
   { label: "Profile", path: "/profile", icon: User },
@@ -11,7 +11,7 @@ const tabs = [
 
 const BottomNav = () => {
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border md:hidden">
+    <nav className="fixed bottom-0 inset-x-0 z-50 glass-panel border-t border-border md:hidden">
       <div className="flex items-center justify-around h-14 px-2">
         {tabs.map((tab) => (
           <NavLink
