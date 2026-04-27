@@ -1,1 +1,7 @@
 project_id = "sttssfromirzkcqetikq"
+
+[functions.admin-create-organization]
+verify_jwt = false
+
+[functions.send-otp]
+verify_jwt = false
