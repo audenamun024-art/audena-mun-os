@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,8 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { ArrowRight, Eye, EyeOff, Mail, Loader2, Sparkles } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Mail, Loader2, User, Lock, AtSign } from "lucide-react";
+import audenaLogo from "@/assets/audena-logo.jpg";
 
 const Auth = () => {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -32,10 +33,7 @@ const Auth = () => {
   const generateOtpCode = () => Math.floor(100000 + Math.random() * 900000).toString();
 
   const sendOtp = async () => {
-    if (!email || !password || !fullName) {
-      toast.error("Fill in all fields first");
-      return;
-    }
+    if (!email || !password || !fullName) { toast.error("Fill in all fields first"); return; }
     setSendingOtp(true);
     const code = generateOtpCode();
     setGeneratedOtp(code);
@@ -50,7 +48,7 @@ const Auth = () => {
       if (!res.ok) throw new Error(data.error || "Failed to send OTP");
       setOtpStep(true);
       setOtpExpiry(Date.now() + 10 * 60 * 1000);
-      toast.success("Code sent to your email");
+      toast.success("Verification code sent");
     } catch (err: any) {
       toast.error(err.message || "Could not send code");
     } finally {
@@ -61,7 +59,6 @@ const Auth = () => {
   const verifyOtpAndSignup = async () => {
     if (otp !== generatedOtp) { toast.error("Invalid code"); return; }
     if (Date.now() > otpExpiry) { toast.error("Code expired"); setOtpStep(false); setOtp(""); return; }
-
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -91,12 +88,11 @@ const Auth = () => {
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       toast.success("Welcome back!");
       await refresh();
-      const isAdmin = data.user.email === "admin@audena.test";
-      navigate(isAdmin ? "/admin" : "/");
+      navigate("/");
     } catch (err: any) {
       toast.error(err.message || "Sign in failed");
     } finally {
@@ -112,35 +108,38 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      {/* Glow background */}
-      <div className="absolute inset-0 bg-gradient-glow pointer-events-none" />
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none animate-glow" />
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden bg-[hsl(222_47%_4%)]">
+      {/* Premium blue glow backdrop */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-[-15%] left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-primary/25 rounded-full blur-[140px] animate-glow" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-accent/15 rounded-full blur-[120px]" />
+        <div className="absolute top-1/3 left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px]" />
+      </div>
 
-      <div className="w-full max-w-sm relative z-10">
+      <div className="w-full max-w-md relative z-10">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-primary shadow-glow mb-4">
-            <Sparkles className="h-6 w-6 text-primary-foreground" />
+        <div className="text-center mb-7">
+          <div className="inline-block rounded-3xl overflow-hidden bg-white shadow-elevated ring-1 ring-primary/30 mb-4">
+            <img src={audenaLogo} alt="Audena Hub" className="w-24 h-24 object-contain" />
           </div>
-          <h1 className="text-3xl font-display font-bold mb-1.5 tracking-tight text-foreground">
-            Audena <span className="text-gradient-primary">Hub</span>
+          <h1 className="text-2xl font-display font-bold tracking-tight text-foreground">
+            Welcome to <span className="text-gradient-primary">Audena Hub</span>
           </h1>
-          <p className="text-xs text-muted-foreground tracking-[0.25em] uppercase font-medium">
-            Connect · Create · Compete
+          <p className="text-[11px] text-muted-foreground tracking-[0.3em] uppercase font-medium mt-1.5">
+            Connect · Discuss · Grow
           </p>
         </div>
 
-        <div className="glass-panel rounded-3xl p-7 shadow-elevated">
+        <div className="glass-panel rounded-3xl p-6 shadow-elevated border-primary/20">
           {otpStep ? (
             <div className="space-y-5 animate-fade-in">
               <div className="text-center">
-                <div className="w-14 h-14 rounded-full bg-primary/15 flex items-center justify-center mx-auto mb-3 ring-1 ring-primary/30">
+                <div className="w-14 h-14 rounded-full bg-primary/15 flex items-center justify-center mx-auto mb-3 ring-1 ring-primary/40">
                   <Mail className="h-6 w-6 text-primary" />
                 </div>
                 <h2 className="text-lg font-bold text-foreground">Verify your email</h2>
                 <p className="text-xs text-muted-foreground mt-1">
-                  6-digit code sent to <span className="font-medium text-foreground">{email}</span>
+                  6-digit code sent to <span className="font-medium text-primary">{email}</span>
                 </p>
               </div>
 
@@ -153,7 +152,7 @@ const Auth = () => {
               </div>
 
               <Button
-                className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 font-semibold h-11 rounded-xl shadow-glow transition-all"
+                className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 font-semibold h-11 rounded-xl shadow-glow"
                 onClick={verifyOtpAndSignup}
                 disabled={loading || otp.length !== 6}
               >
@@ -161,17 +160,16 @@ const Auth = () => {
               </Button>
 
               <div className="flex items-center justify-between">
-                <button onClick={() => { setOtpStep(false); setOtp(""); }} className="text-xs text-muted-foreground hover:text-primary transition-colors">
-                  ← Back
-                </button>
+                <button onClick={() => { setOtpStep(false); setOtp(""); }} className="text-xs text-muted-foreground hover:text-primary">← Back</button>
                 <button onClick={sendOtp} disabled={sendingOtp} className="text-xs text-primary hover:underline font-medium disabled:opacity-50">
-                  {sendingOtp ? "Sending..." : "Resend"}
+                  {sendingOtp ? "Sending..." : "Resend code"}
                 </button>
               </div>
             </div>
           ) : (
             <>
-              <div className="flex bg-secondary/60 rounded-2xl p-1 mb-6 border border-border">
+              {/* Tab toggle */}
+              <div className="flex bg-secondary/70 rounded-2xl p-1 mb-6 border border-border">
                 {(["login", "signup"] as const).map((m) => (
                   <button
                     key={m}
@@ -182,7 +180,7 @@ const Auth = () => {
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    {m === "login" ? "Sign In" : "Create Account"}
+                    {m === "login" ? "Sign In" : "Sign Up"}
                   </button>
                 ))}
               </div>
@@ -191,44 +189,51 @@ const Auth = () => {
                 {mode === "signup" && (
                   <div>
                     <Label className="text-xs font-medium text-muted-foreground">Full name</Label>
-                    <Input
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Your name"
-                      className="mt-1.5 bg-secondary/60 border-border h-11 rounded-xl focus:border-primary focus:ring-primary/30"
-                    />
+                    <div className="relative mt-1.5">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="Your name"
+                        className="bg-secondary/60 border-border h-11 pl-10 rounded-xl focus:border-primary focus:ring-primary/30"
+                      />
+                    </div>
                   </div>
                 )}
 
                 <div>
                   <Label className="text-xs font-medium text-muted-foreground">Email</Label>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="mt-1.5 bg-secondary/60 border-border h-11 rounded-xl focus:border-primary focus:ring-primary/30"
-                  />
+                  <div className="relative mt-1.5">
+                    <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      className="bg-secondary/60 border-border h-11 pl-10 rounded-xl focus:border-primary focus:ring-primary/30"
+                    />
+                  </div>
                 </div>
 
                 <div>
                   <Label className="text-xs font-medium text-muted-foreground">Password</Label>
                   <div className="relative mt-1.5">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="bg-secondary/60 border-border h-11 pr-10 rounded-xl focus:border-primary focus:ring-primary/30"
+                      className="bg-secondary/60 border-border h-11 pl-10 pr-10 rounded-xl focus:border-primary focus:ring-primary/30"
                     />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary">
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
 
                 <Button
-                  className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 font-semibold h-11 rounded-xl shadow-glow transition-all group"
+                  className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 font-semibold h-11 rounded-xl shadow-glow group mt-2"
                   onClick={handleAuth}
                   disabled={loading || sendingOtp}
                 >
@@ -236,8 +241,8 @@ const Auth = () => {
                     <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
                     <>
-                      Continue
-                      <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                      {mode === "login" ? "Sign In" : "Create Account"}
+                      <ArrowRight className="h-4 w-4 ml-1.5 group-hover:translate-x-0.5 transition-transform" />
                     </>
                   )}
                 </Button>
@@ -251,13 +256,23 @@ const Auth = () => {
                     Forgot password?
                   </button>
                 )}
+
+                <p className="text-center text-xs text-muted-foreground pt-1">
+                  {mode === "login" ? "New to Audena Hub? " : "Already have an account? "}
+                  <button
+                    onClick={() => setMode(mode === "login" ? "signup" : "login")}
+                    className="text-primary font-semibold hover:underline"
+                  >
+                    {mode === "login" ? "Create one" : "Sign in"}
+                  </button>
+                </p>
               </div>
             </>
           )}
         </div>
 
-        <p className="text-center mt-6 text-[11px] text-muted-foreground/60">
-          By continuing you agree to our terms.
+        <p className="text-center mt-5 text-[11px] text-muted-foreground/60">
+          By continuing you agree to our Terms & Privacy Policy.
         </p>
       </div>
     </div>
