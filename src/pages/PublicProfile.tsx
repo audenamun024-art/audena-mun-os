@@ -99,8 +99,8 @@ const PublicProfile = () => {
               <div className="flex-1 min-w-0">
                 <h1 className="text-lg font-bold text-foreground truncate">{profile.full_name}</h1>
                 <p className="text-xs text-muted-foreground mb-1.5">{profile.institution || "No institution"}</p>
-                <span className="text-[10px] bg-primary/10 text-primary px-2.5 py-0.5 rounded-full font-semibold capitalize">
-                  {profile.account_type}
+                <span className="text-[10px] bg-primary/10 text-primary px-2.5 py-0.5 rounded-full font-semibold">
+                  AudenaHub Member
                 </span>
               </div>
             </div>

@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import BuzzVideoCard from "@/components/buzz/BuzzVideoCard";
 import FullscreenReel from "@/components/buzz/FullscreenReel";
 import ShareModal from "@/components/buzz/ShareModal";
+import StoryRow from "@/components/stories/StoryRow";
 
 type CommentsByVideo = Record<string, any[]>;
 type NameLookup = Record<string, string>;
@@ -203,6 +204,7 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0 lg:gap-6">
           {/* Main Feed */}
           <div className="max-w-xl mx-auto w-full">
+            <StoryRow />
             <div ref={feedRef}>
               {loading ? (
                 Array.from({ length: 3 }).map((_, i) => (
@@ -294,7 +296,7 @@ const Index = () => {
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Top Delegates</p>
-                  <Link to="/rankboard" className="text-xs font-medium text-primary hover:underline">See All</Link>
+                  <Link to="/explore" className="text-xs font-medium text-primary hover:underline">See All</Link>
                 </div>
                 <div className="space-y-3">
                   {displayDelegates.slice(0, 5).map((d: any, i: number) => (
@@ -316,10 +318,10 @@ const Index = () => {
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Explore</p>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { label: "Events", path: "/events", icon: "📅" },
+                    { label: "Explore", path: "/explore", icon: "🧭" },
                     { label: "Buzz Feed", path: "/buzz", icon: "🎬" },
-                    { label: "Research", path: "/research", icon: "🔬" },
-                    { label: "Rankings", path: "/rankboard", icon: "🏆" },
+                    { label: "Chats", path: "/chats", icon: "💬" },
+                    { label: "Profile", path: "/profile", icon: "👤" },
                   ].map((item) => (
                     <Link key={item.label} to={item.path}
                       className="flex items-center gap-2 p-2.5 rounded-lg bg-secondary/50 hover:bg-secondary text-[13px] font-medium text-foreground transition-colors">
