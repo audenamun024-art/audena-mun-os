@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useConnections } from "@/hooks/useConnections";
-import { UserPlus, UserCheck, Clock, UserMinus } from "lucide-react";
+import { UserPlus, UserCheck, Clock, Video as VideoIcon, Grid3x3, Play, Heart, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 
 const PublicProfile = () => {
@@ -15,8 +15,10 @@ const PublicProfile = () => {
   const { getStatus, connect, acceptConnection, removeConnection, networkCount: myNetworkCount } = useConnections();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [dropCount, setDropCount] = useState(0);
+  const [videos, setVideos] = useState<any[]>([]);
+  const [posts, setPosts] = useState<any[]>([]);
   const [networkCount, setNetworkCount] = useState(0);
+  const [contentTab, setContentTab] = useState<"videos" | "posts">("videos");
 
   const isOwnProfile = user?.id === userId;
 
@@ -24,16 +26,18 @@ const PublicProfile = () => {
     const fetch = async () => {
       if (!userId) return;
       setLoading(true);
-      const [{ data: p }, { data: videos }, { data: conns }] = await Promise.all([
+      const [{ data: p }, { data: vids }, { data: pposts }, { data: conns }] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
-        supabase.from("videos").select("id").eq("user_id", userId),
+        supabase.from("videos").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+        supabase.from("posts").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
         (supabase.from("connections" as any) as any)
           .select("id")
           .eq("status", "connected")
           .or(`requester_id.eq.${userId},receiver_id.eq.${userId}`),
       ]);
       setProfile(p);
-      setDropCount((videos as any[])?.length || 0);
+      setVideos((vids as any[]) || []);
+      setPosts((pposts as any[]) || []);
       setNetworkCount((conns as any[])?.length || 0);
       setLoading(false);
     };
@@ -107,8 +111,8 @@ const PublicProfile = () => {
 
             <div className="flex justify-around mt-5 pt-4 border-t border-border">
               <div className="text-center">
-                <p className="text-lg font-bold text-foreground">{dropCount}</p>
-                <p className="text-[10px] text-muted-foreground">Drop</p>
+                <p className="text-lg font-bold text-foreground">{videos.length + posts.length}</p>
+                <p className="text-[10px] text-muted-foreground">Posts</p>
               </div>
               <div className="text-center">
                 <p className="text-lg font-bold text-foreground">{networkCount}</p>
