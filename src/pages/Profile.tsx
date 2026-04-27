@@ -1,5 +1,5 @@
 import AppLayout from "@/components/layout/AppLayout";
-import { Edit, Upload, Menu } from "lucide-react";
+import { Edit, Upload, Menu, Video as VideoIcon, Image as ImageIcon, Grid3x3, Play, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,12 +13,16 @@ import { useConnections } from "@/hooks/useConnections";
 import { toast } from "sonner";
 import { uploadPublicFile } from "@/lib/storage";
 
+type ContentTab = "videos" | "posts";
+
 const Profile = () => {
   const navigate = useNavigate();
   const { user, roles } = useAuth();
   const { networkCount } = useConnections();
   const [profile, setProfile] = useState<any>(null);
-  const [dropCount, setDropCount] = useState(0);
+  const [videos, setVideos] = useState<any[]>([]);
+  const [posts, setPosts] = useState<any[]>([]);
+  const [contentTab, setContentTab] = useState<ContentTab>("videos");
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ full_name: "", institution: "", bio: "", phone: "" });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -28,26 +32,38 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const fetchAll = async () => {
+    if (!user) { setLoading(false); return; }
+    setLoading(true);
+    try {
+      const [profileRes, videosRes, postsRes] = await Promise.all([
+        supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
+        supabase.from("videos").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("posts").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+      ]);
+      if (profileRes?.data) {
+        const p = profileRes.data as any;
+        setProfile(p);
+        setEditForm({ full_name: p.full_name || "", institution: p.institution || "", bio: p.bio || "", phone: p.phone || "" });
+        setAvatarPreview(p.avatar_url || null);
+      }
+      setVideos((videosRes.data as any[]) || []);
+      setPosts((postsRes.data as any[]) || []);
+    } catch (error) { console.error(error); toast.error("Could not load profile"); }
+    finally { setLoading(false); }
+  };
+
   useEffect(() => {
-    const fetchAll = async () => {
-      if (!user) { setLoading(false); return; }
-      setLoading(true);
-      try {
-        const [profileRes, videosRes] = await Promise.all([
-          supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
-          supabase.from("videos").select("id").eq("user_id", user.id),
-        ]);
-        if (profileRes?.data) {
-          const p = profileRes.data as any;
-          setProfile(p);
-          setEditForm({ full_name: p.full_name || "", institution: p.institution || "", bio: p.bio || "", phone: p.phone || "" });
-          setAvatarPreview(p.avatar_url || null);
-        }
-        setDropCount((videosRes.data as any[])?.length || 0);
-      } catch (error) { console.error(error); toast.error("Could not load profile"); }
-      finally { setLoading(false); }
-    };
     void fetchAll();
+    if (!user) return;
+    // Realtime: refresh when this user's content changes
+    const channel = supabase
+      .channel(`profile-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "videos", filter: `user_id=eq.${user.id}` }, () => fetchAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "posts", filter: `user_id=eq.${user.id}` }, () => fetchAll())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,6 +96,7 @@ const Profile = () => {
 
   const dp = profile || { full_name: user?.user_metadata?.full_name || "User", institution: "", bio: "", avatar_url: null };
   const initials = dp.full_name ? dp.full_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() : "U";
+  const totalContent = videos.length + posts.length;
 
   return (
     <AppLayout>
@@ -90,6 +107,7 @@ const Profile = () => {
           </button>
         </div>
 
+        {/* Profile header */}
         <div className="glass-panel rounded-2xl p-6 shadow-card">
           {loading ? (
             <div className="flex items-start gap-5">
@@ -115,7 +133,7 @@ const Profile = () => {
 
               <div className="flex justify-around mt-5 pt-4 border-t border-border">
                 <div className="text-center">
-                  <p className="text-lg font-bold text-foreground">{dropCount}</p>
+                  <p className="text-lg font-bold text-foreground">{totalContent}</p>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Posts</p>
                 </div>
                 <div className="text-center">
@@ -123,8 +141,8 @@ const Profile = () => {
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Network</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-gradient-primary">✦</p>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Hub</p>
+                  <p className="text-lg font-bold text-gradient-primary">{dp.rank_points || 0}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Points</p>
                 </div>
               </div>
 
@@ -160,6 +178,105 @@ const Profile = () => {
                     </Button>
                     <Button size="sm" variant="outline" className="rounded-lg" onClick={() => setEditing(false)} disabled={saving}>Cancel</Button>
                   </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Content tabs */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-center gap-1 border-t border-border pt-3">
+            <button
+              onClick={() => setContentTab("videos")}
+              className={`flex items-center gap-1.5 px-5 py-2 text-xs font-semibold uppercase tracking-wider transition-colors border-b-2 ${
+                contentTab === "videos" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <VideoIcon className="h-3.5 w-3.5" /> Buzz <span className="text-[10px] opacity-70">({videos.length})</span>
+            </button>
+            <button
+              onClick={() => setContentTab("posts")}
+              className={`flex items-center gap-1.5 px-5 py-2 text-xs font-semibold uppercase tracking-wider transition-colors border-b-2 ${
+                contentTab === "posts" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Grid3x3 className="h-3.5 w-3.5" /> Posts <span className="text-[10px] opacity-70">({posts.length})</span>
+            </button>
+          </div>
+
+          {contentTab === "videos" && (
+            <>
+              {loading ? (
+                <div className="grid grid-cols-3 gap-1">
+                  {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="aspect-[9/16] rounded-md" />)}
+                </div>
+              ) : videos.length === 0 ? (
+                <div className="text-center py-12 glass-panel rounded-2xl">
+                  <VideoIcon className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="font-semibold text-sm">No buzz videos yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">Upload your first video to fill the grid.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-1">
+                  {videos.map((v) => (
+                    <div
+                      key={v.id}
+                      onClick={() => navigate("/buzz")}
+                      className="relative aspect-[9/16] bg-secondary rounded-md overflow-hidden cursor-pointer group"
+                    >
+                      {v.thumbnail_url ? (
+                        <img src={v.thumbnail_url} alt={v.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <video src={v.video_url} className="w-full h-full object-cover" muted preload="metadata" />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute top-1.5 right-1.5 bg-black/60 backdrop-blur-sm rounded-full p-1">
+                        <Play className="h-2.5 w-2.5 text-white fill-white" />
+                      </div>
+                      {v.title && (
+                        <p className="absolute bottom-1 left-1.5 right-1.5 text-[10px] text-white font-medium line-clamp-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {v.title}
+                        </p>
+                      )}
+                      <div className="absolute bottom-1 right-1.5 text-[9px] text-white/80 flex items-center gap-0.5">
+                        <Play className="h-2 w-2" /> {v.views || 0}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {contentTab === "posts" && (
+            <>
+              {loading ? (
+                <div className="grid grid-cols-3 gap-1">
+                  {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="aspect-square rounded-md" />)}
+                </div>
+              ) : posts.length === 0 ? (
+                <div className="text-center py-12 glass-panel rounded-2xl">
+                  <ImageIcon className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="font-semibold text-sm">No posts yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">Share something to the explore feed.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-1">
+                  {posts.map((p) => (
+                    <div
+                      key={p.id}
+                      onClick={() => navigate("/explore")}
+                      className="relative aspect-square bg-secondary rounded-md overflow-hidden cursor-pointer group"
+                    >
+                      <img src={p.image_url} alt={p.caption || ""} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span className="text-white text-xs font-semibold flex items-center gap-1">
+                          <Heart className="h-3 w-3 fill-white" /> {p.likes_count || 0}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </>
