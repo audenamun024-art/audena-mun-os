@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Compass, Plus, Sparkles } from "lucide-react";
+import { Compass, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useState } from "react";
@@ -36,11 +36,17 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
                 </Button>
               </div>
 
-              <Link to="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span className="text-lg font-display font-bold tracking-tight">
-                  <span className="text-foreground">Audena</span><span className="text-gradient-primary">Hub</span>
+              <Link
+                to="/"
+                className="absolute left-1/2 -translate-x-1/2 flex items-baseline gap-[2px] select-none group"
+              >
+                <span className="text-[22px] font-display font-extrabold tracking-tight text-foreground leading-none">
+                  Audena
                 </span>
+                <span className="text-[22px] font-display font-extrabold tracking-tight leading-none bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  Hub
+                </span>
+                <span className="ml-1 mt-[2px] h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_10px_hsl(var(--primary))]" />
               </Link>
 
               <div className="flex items-center gap-1">
