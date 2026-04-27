@@ -148,6 +148,79 @@ const PublicProfile = () => {
             )}
           </div>
         )}
+
+        {/* Content grid */}
+        {!loading && profile && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-center gap-1 border-t border-border pt-3">
+              <button
+                onClick={() => setContentTab("videos")}
+                className={`flex items-center gap-1.5 px-5 py-2 text-xs font-semibold uppercase tracking-wider transition-colors border-b-2 ${
+                  contentTab === "videos" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <VideoIcon className="h-3.5 w-3.5" /> Buzz <span className="text-[10px] opacity-70">({videos.length})</span>
+              </button>
+              <button
+                onClick={() => setContentTab("posts")}
+                className={`flex items-center gap-1.5 px-5 py-2 text-xs font-semibold uppercase tracking-wider transition-colors border-b-2 ${
+                  contentTab === "posts" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Grid3x3 className="h-3.5 w-3.5" /> Posts <span className="text-[10px] opacity-70">({posts.length})</span>
+              </button>
+            </div>
+
+            {contentTab === "videos" && (
+              videos.length === 0 ? (
+                <div className="text-center py-12 glass-panel rounded-2xl">
+                  <VideoIcon className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">No buzz videos yet</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-1">
+                  {videos.map((v) => (
+                    <div key={v.id} className="relative aspect-[9/16] bg-secondary rounded-md overflow-hidden group">
+                      {v.thumbnail_url ? (
+                        <img src={v.thumbnail_url} alt={v.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <video src={v.video_url} className="w-full h-full object-cover" muted preload="metadata" />
+                      )}
+                      <div className="absolute top-1.5 right-1.5 bg-black/60 backdrop-blur-sm rounded-full p-1">
+                        <Play className="h-2.5 w-2.5 text-white fill-white" />
+                      </div>
+                      <div className="absolute bottom-1 right-1.5 text-[9px] text-white/80 flex items-center gap-0.5">
+                        <Play className="h-2 w-2" /> {v.views || 0}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+
+            {contentTab === "posts" && (
+              posts.length === 0 ? (
+                <div className="text-center py-12 glass-panel rounded-2xl">
+                  <ImageIcon className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">No posts yet</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-1">
+                  {posts.map((p) => (
+                    <div key={p.id} className="relative aspect-square bg-secondary rounded-md overflow-hidden group">
+                      <img src={p.image_url} alt={p.caption || ""} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span className="text-white text-xs font-semibold flex items-center gap-1">
+                          <Heart className="h-3 w-3 fill-white" /> {p.likes_count || 0}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+          </div>
+        )}
       </div>
     </AppLayout>
   );
