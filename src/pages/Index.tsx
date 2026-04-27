@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import BuzzVideoCard from "@/components/buzz/BuzzVideoCard";
 import FullscreenReel from "@/components/buzz/FullscreenReel";
 import ShareModal from "@/components/buzz/ShareModal";
+import StoryRow from "@/components/stories/StoryRow";
 
 type CommentsByVideo = Record<string, any[]>;
 type NameLookup = Record<string, string>;
@@ -203,6 +204,7 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0 lg:gap-6">
           {/* Main Feed */}
           <div className="max-w-xl mx-auto w-full">
+            <StoryRow />
             <div ref={feedRef}>
               {loading ? (
                 Array.from({ length: 3 }).map((_, i) => (
