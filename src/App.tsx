@@ -47,7 +47,8 @@ const App = () => (
                 <Route path="/profile/:userId" element={<RequireAuth><PublicProfile /></RequireAuth>} />
                 <Route path="/menu" element={<RequireAuth><ProfileMenu /></RequireAuth>} />
                 <Route path="/chats" element={<RequireAuth><Chats /></RequireAuth>} />
-                <Route path="/admin" element={<RequireAuth requireAdmin><Admin /></RequireAuth>} />
+                {/* Public admin panel — no auth required */}
+                <Route path="/admin" element={<Admin />} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
