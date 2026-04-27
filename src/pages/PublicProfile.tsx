@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useConnections } from "@/hooks/useConnections";
-import { UserPlus, UserCheck, Clock, UserMinus } from "lucide-react";
+import { UserPlus, UserCheck, Clock, Video as VideoIcon, Grid3x3, Play, Heart, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 
 const PublicProfile = () => {
@@ -15,8 +15,10 @@ const PublicProfile = () => {
   const { getStatus, connect, acceptConnection, removeConnection, networkCount: myNetworkCount } = useConnections();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [dropCount, setDropCount] = useState(0);
+  const [videos, setVideos] = useState<any[]>([]);
+  const [posts, setPosts] = useState<any[]>([]);
   const [networkCount, setNetworkCount] = useState(0);
+  const [contentTab, setContentTab] = useState<"videos" | "posts">("videos");
 
   const isOwnProfile = user?.id === userId;
 
@@ -24,16 +26,18 @@ const PublicProfile = () => {
     const fetch = async () => {
       if (!userId) return;
       setLoading(true);
-      const [{ data: p }, { data: videos }, { data: conns }] = await Promise.all([
+      const [{ data: p }, { data: vids }, { data: pposts }, { data: conns }] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
-        supabase.from("videos").select("id").eq("user_id", userId),
+        supabase.from("videos").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+        supabase.from("posts").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
         (supabase.from("connections" as any) as any)
           .select("id")
           .eq("status", "connected")
           .or(`requester_id.eq.${userId},receiver_id.eq.${userId}`),
       ]);
       setProfile(p);
-      setDropCount((videos as any[])?.length || 0);
+      setVideos((vids as any[]) || []);
+      setPosts((pposts as any[]) || []);
       setNetworkCount((conns as any[])?.length || 0);
       setLoading(false);
     };
@@ -107,8 +111,8 @@ const PublicProfile = () => {
 
             <div className="flex justify-around mt-5 pt-4 border-t border-border">
               <div className="text-center">
-                <p className="text-lg font-bold text-foreground">{dropCount}</p>
-                <p className="text-[10px] text-muted-foreground">Drop</p>
+                <p className="text-lg font-bold text-foreground">{videos.length + posts.length}</p>
+                <p className="text-[10px] text-muted-foreground">Posts</p>
               </div>
               <div className="text-center">
                 <p className="text-lg font-bold text-foreground">{networkCount}</p>
@@ -141,6 +145,79 @@ const PublicProfile = () => {
                   {btn.label}
                 </Button>
               </div>
+            )}
+          </div>
+        )}
+
+        {/* Content grid */}
+        {!loading && profile && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-center gap-1 border-t border-border pt-3">
+              <button
+                onClick={() => setContentTab("videos")}
+                className={`flex items-center gap-1.5 px-5 py-2 text-xs font-semibold uppercase tracking-wider transition-colors border-b-2 ${
+                  contentTab === "videos" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <VideoIcon className="h-3.5 w-3.5" /> Buzz <span className="text-[10px] opacity-70">({videos.length})</span>
+              </button>
+              <button
+                onClick={() => setContentTab("posts")}
+                className={`flex items-center gap-1.5 px-5 py-2 text-xs font-semibold uppercase tracking-wider transition-colors border-b-2 ${
+                  contentTab === "posts" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Grid3x3 className="h-3.5 w-3.5" /> Posts <span className="text-[10px] opacity-70">({posts.length})</span>
+              </button>
+            </div>
+
+            {contentTab === "videos" && (
+              videos.length === 0 ? (
+                <div className="text-center py-12 glass-panel rounded-2xl">
+                  <VideoIcon className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">No buzz videos yet</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-1">
+                  {videos.map((v) => (
+                    <div key={v.id} className="relative aspect-[9/16] bg-secondary rounded-md overflow-hidden group">
+                      {v.thumbnail_url ? (
+                        <img src={v.thumbnail_url} alt={v.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <video src={v.video_url} className="w-full h-full object-cover" muted preload="metadata" />
+                      )}
+                      <div className="absolute top-1.5 right-1.5 bg-black/60 backdrop-blur-sm rounded-full p-1">
+                        <Play className="h-2.5 w-2.5 text-white fill-white" />
+                      </div>
+                      <div className="absolute bottom-1 right-1.5 text-[9px] text-white/80 flex items-center gap-0.5">
+                        <Play className="h-2 w-2" /> {v.views || 0}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+
+            {contentTab === "posts" && (
+              posts.length === 0 ? (
+                <div className="text-center py-12 glass-panel rounded-2xl">
+                  <ImageIcon className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">No posts yet</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-1">
+                  {posts.map((p) => (
+                    <div key={p.id} className="relative aspect-square bg-secondary rounded-md overflow-hidden group">
+                      <img src={p.image_url} alt={p.caption || ""} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span className="text-white text-xs font-semibold flex items-center gap-1">
+                          <Heart className="h-3 w-3 fill-white" /> {p.likes_count || 0}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
             )}
           </div>
         )}

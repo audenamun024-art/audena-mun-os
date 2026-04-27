@@ -162,6 +162,54 @@ export type Database = {
         }
         Relationships: []
       }
+      organizations: {
+        Row: {
+          contact_person: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          email: string
+          id: string
+          logo_url: string | null
+          name: string
+          owner_user_id: string | null
+          phone: string | null
+          status: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          contact_person?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          email: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          owner_user_id?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          contact_person?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          email?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          owner_user_id?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       post_likes: {
         Row: {
           created_at: string
@@ -496,7 +544,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "organization"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -624,7 +672,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "organization"],
     },
   },
 } as const
