@@ -878,6 +878,41 @@ const Admin = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* EVENT DIALOG */}
+      <Dialog open={eventDialog.open} onOpenChange={(o) => !o && setEventDialog({ open: false, editing: null })}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" />
+              {eventDialog.editing ? "Edit event" : "Create new event"}
+            </DialogTitle>
+            <DialogDescription>Published events appear immediately on the Events page.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div><Label className="text-xs">Title *</Label><Input value={eventForm.title} onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })} /></div>
+            <div><Label className="text-xs">Description</Label><Textarea value={eventForm.description} onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs">Cover image URL</Label><Input value={eventForm.cover_url} onChange={(e) => setEventForm({ ...eventForm, cover_url: e.target.value })} /></div>
+              <div><Label className="text-xs">Category</Label><Input value={eventForm.category} onChange={(e) => setEventForm({ ...eventForm, category: e.target.value })} /></div>
+            </div>
+            <div><Label className="text-xs">Location</Label><Input value={eventForm.location} onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs">Start date</Label><Input type="datetime-local" value={eventForm.start_date} onChange={(e) => setEventForm({ ...eventForm, start_date: e.target.value })} /></div>
+              <div><Label className="text-xs">End date</Label><Input type="datetime-local" value={eventForm.end_date} onChange={(e) => setEventForm({ ...eventForm, end_date: e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs">Fee (₹)</Label><Input type="number" value={eventForm.fee} onChange={(e) => setEventForm({ ...eventForm, fee: Number(e.target.value) })} /></div>
+              <div><Label className="text-xs">Capacity</Label><Input type="number" value={eventForm.capacity} onChange={(e) => setEventForm({ ...eventForm, capacity: Number(e.target.value) })} /></div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEventDialog({ open: false, editing: null })}>Cancel</Button>
+            <Button className="bg-gradient-primary text-primary-foreground" onClick={submitEvent} disabled={eventSubmitting}>
+              {eventSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (eventDialog.editing ? "Save" : "Publish event")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
