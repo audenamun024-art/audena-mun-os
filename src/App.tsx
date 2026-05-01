@@ -17,6 +17,7 @@ import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import Chats from "./pages/Chats";
+import Events from "./pages/Events";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -47,6 +48,7 @@ const App = () => (
                 <Route path="/profile/:userId" element={<RequireAuth><PublicProfile /></RequireAuth>} />
                 <Route path="/menu" element={<RequireAuth><ProfileMenu /></RequireAuth>} />
                 <Route path="/chats" element={<RequireAuth><Chats /></RequireAuth>} />
+                <Route path="/events" element={<RequireAuth><Events /></RequireAuth>} />
                 {/* Public admin panel — no auth required */}
                 <Route path="/admin" element={<Admin />} />
 

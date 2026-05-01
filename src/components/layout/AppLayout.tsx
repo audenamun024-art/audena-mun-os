@@ -38,15 +38,11 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
               <Link
                 to="/"
-                className="absolute left-1/2 -translate-x-1/2 flex items-baseline gap-[2px] select-none group"
+                className="absolute left-1/2 -translate-x-1/2 select-none"
               >
-                <span className="text-[22px] font-display font-extrabold tracking-tight text-foreground leading-none">
-                  Audena
+                <span className="text-[22px] font-display font-bold tracking-tight text-white leading-none">
+                  AudenaHub
                 </span>
-                <span className="text-[22px] font-display font-extrabold tracking-tight leading-none bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  Hub
-                </span>
-                <span className="ml-1 mt-[2px] h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_10px_hsl(var(--primary))]" />
               </Link>
 
               <div className="flex items-center gap-1">

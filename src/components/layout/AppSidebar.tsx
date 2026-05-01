@@ -1,4 +1,4 @@
-import { Home, Compass, Play, MessageCircle, User, Shield, LogOut } from "lucide-react";
+import { Home, Compass, Calendar, Play, MessageCircle, User, Shield, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,6 +18,7 @@ const AppSidebar = () => {
   const mainItems = [
     { title: "Home", url: "/", icon: Home },
     { title: "Explore", url: "/explore", icon: Compass },
+    { title: "Events", url: "/events", icon: Calendar },
     { title: "Buzz", url: "/buzz", icon: Play },
     { title: "Chats", url: "/chats", icon: MessageCircle },
     { title: "Profile", url: "/profile", icon: User },
