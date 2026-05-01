@@ -226,6 +226,68 @@ const Admin = () => {
     toast.success("Organization deleted");
   };
 
+  // ---- event actions ----
+  const resetEventForm = () => setEventForm({
+    title: "", description: "", cover_url: "", location: "",
+    start_date: "", end_date: "", fee: 0, currency: "INR", capacity: 0, category: "MUN",
+  });
+  const openCreateEvent = () => { resetEventForm(); setEventDialog({ open: true, editing: null }); };
+  const openEditEvent = (e: any) => {
+    setEventForm({
+      title: e.title || "", description: e.description || "", cover_url: e.cover_url || "",
+      location: e.location || "",
+      start_date: e.start_date ? e.start_date.slice(0,16) : "",
+      end_date: e.end_date ? e.end_date.slice(0,16) : "",
+      fee: Number(e.fee) || 0, currency: e.currency || "INR",
+      capacity: e.capacity || 0, category: e.category || "MUN",
+    });
+    setEventDialog({ open: true, editing: e });
+  };
+  const submitEvent = async () => {
+    if (!eventForm.title.trim()) return toast.error("Title required");
+    setEventSubmitting(true);
+    try {
+      const payload: any = {
+        title: eventForm.title, description: eventForm.description || null,
+        cover_url: eventForm.cover_url || null, location: eventForm.location || null,
+        start_date: eventForm.start_date || null, end_date: eventForm.end_date || null,
+        fee: Number(eventForm.fee) || 0, currency: eventForm.currency,
+        capacity: Number(eventForm.capacity) || null, category: eventForm.category || null,
+        status: "published",
+      };
+      if (eventDialog.editing) {
+        const { error } = await supabase.from("events" as any).update(payload).eq("id", eventDialog.editing.id);
+        if (error) throw error;
+        toast.success("Event updated");
+      } else {
+        const { error } = await supabase.from("events" as any).insert(payload);
+        if (error) throw error;
+        toast.success("Event published");
+      }
+      setEventDialog({ open: false, editing: null });
+    } catch (e: any) { toast.error(e.message || "Failed"); }
+    finally { setEventSubmitting(false); }
+  };
+  const deleteEvent = async (e: any) => {
+    if (!confirm(`Delete event "${e.title}"?`)) return;
+    const { error } = await supabase.from("events" as any).delete().eq("id", e.id);
+    if (error) return toast.error(error.message);
+    toast.success("Event deleted");
+  };
+
+  const refundPayment = async (p: any) => {
+    if (!confirm(`Mark payment ${p.order_id} as refunded?`)) return;
+    const { error } = await supabase.from("payments" as any).update({ status: "refunded" }).eq("id", p.id);
+    if (error) return toast.error(error.message);
+    toast.success("Marked refunded");
+  };
+  const deletePayment = async (p: any) => {
+    if (!confirm("Delete this payment record?")) return;
+    const { error } = await supabase.from("payments" as any).delete().eq("id", p.id);
+    if (error) return toast.error(error.message);
+    toast.success("Payment deleted");
+  };
+
   const copyText = (label: string, text: string) => {
     navigator.clipboard.writeText(text);
     toast.success(`${label} copied`);
@@ -235,19 +297,22 @@ const Admin = () => {
   const filtered = (list: any[], keys: string[]) =>
     !search ? list : list.filter((x) => keys.some((k) => (x[k] || "").toString().toLowerCase().includes(search.toLowerCase())));
 
+  const totalRevenue = payments.filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.amount || 0), 0);
   const stats = [
     { label: "Users", value: profiles.length, icon: Users, color: "from-blue-500 to-cyan-500" },
-    { label: "Organizations", value: organizations.length, icon: Building2, color: "from-violet-500 to-blue-500" },
+    { label: "Orgs", value: organizations.length, icon: Building2, color: "from-violet-500 to-blue-500" },
+    { label: "Events", value: events.length, icon: Calendar, color: "from-emerald-500 to-blue-500" },
+    { label: "Revenue ₹", value: totalRevenue, icon: IndianRupee, color: "from-amber-500 to-emerald-500" },
     { label: "Videos", value: videos.length, icon: Video, color: "from-indigo-500 to-blue-500" },
-    { label: "Posts", value: posts.length, icon: ImageIcon, color: "from-cyan-500 to-sky-500" },
-    { label: "Stories", value: stories.length, icon: Sparkles, color: "from-sky-500 to-blue-500" },
     { label: "Flagged", value: videos.filter((v) => v.flagged).length, icon: AlertTriangle, color: "from-amber-500 to-orange-500" },
   ];
 
   const tabs: { key: Tab; label: string; icon: any; count: number }[] = [
     { key: "overview", label: "Overview", icon: BarChart3, count: 0 },
     { key: "users", label: "Users", icon: Users, count: profiles.length },
-    { key: "organizations", label: "Organizations", icon: Building2, count: organizations.length },
+    { key: "organizations", label: "Orgs", icon: Building2, count: organizations.length },
+    { key: "events", label: "Events", icon: Calendar, count: events.length },
+    { key: "payments", label: "Payments", icon: Receipt, count: payments.length },
     { key: "videos", label: "Videos", icon: Video, count: videos.length },
     { key: "posts", label: "Posts", icon: ImageIcon, count: posts.length },
     { key: "stories", label: "Stories", icon: Sparkles, count: stories.length },
@@ -304,6 +369,11 @@ const Admin = () => {
             {activeTab === "organizations" && (
               <Button size="sm" className="h-10 bg-gradient-primary text-primary-foreground rounded-xl shadow-glow" onClick={openCreateOrg}>
                 <Plus className="h-4 w-4 mr-1" /> New Org
+              </Button>
+            )}
+            {activeTab === "events" && (
+              <Button size="sm" className="h-10 bg-gradient-primary text-primary-foreground rounded-xl shadow-glow" onClick={openCreateEvent}>
+                <Plus className="h-4 w-4 mr-1" /> New Event
               </Button>
             )}
           </div>
