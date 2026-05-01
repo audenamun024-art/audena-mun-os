@@ -1,5 +1,5 @@
 import AppLayout from "@/components/layout/AppLayout";
-import { Edit, Upload, Menu, Video as VideoIcon, Image as ImageIcon, Grid3x3, Play, Heart } from "lucide-react";
+import { Edit, Upload, Menu, Video as VideoIcon, Image as ImageIcon, Grid3x3, Play, Heart, Receipt, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,7 @@ import { useConnections } from "@/hooks/useConnections";
 import { toast } from "sonner";
 import { uploadPublicFile } from "@/lib/storage";
 
-type ContentTab = "videos" | "posts";
+type ContentTab = "videos" | "posts" | "transactions";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -22,6 +22,7 @@ const Profile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [videos, setVideos] = useState<any[]>([]);
   const [posts, setPosts] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
   const [contentTab, setContentTab] = useState<ContentTab>("videos");
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ full_name: "", institution: "", bio: "", phone: "" });
@@ -36,10 +37,11 @@ const Profile = () => {
     if (!user) { setLoading(false); return; }
     setLoading(true);
     try {
-      const [profileRes, videosRes, postsRes] = await Promise.all([
+      const [profileRes, videosRes, postsRes, paymentsRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
         supabase.from("videos").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
         supabase.from("posts").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("payments" as any).select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
       ]);
       if (profileRes?.data) {
         const p = profileRes.data as any;
@@ -49,6 +51,7 @@ const Profile = () => {
       }
       setVideos((videosRes.data as any[]) || []);
       setPosts((postsRes.data as any[]) || []);
+      setPayments((paymentsRes.data as any[]) || []);
     } catch (error) { console.error(error); toast.error("Could not load profile"); }
     finally { setLoading(false); }
   };
@@ -202,6 +205,14 @@ const Profile = () => {
               }`}
             >
               <Grid3x3 className="h-3.5 w-3.5" /> Posts <span className="text-[10px] opacity-70">({posts.length})</span>
+            </button>
+            <button
+              onClick={() => setContentTab("transactions")}
+              className={`flex items-center gap-1.5 px-5 py-2 text-xs font-semibold uppercase tracking-wider transition-colors border-b-2 ${
+                contentTab === "transactions" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Receipt className="h-3.5 w-3.5" /> Transactions <span className="text-[10px] opacity-70">({payments.length})</span>
             </button>
           </div>
 

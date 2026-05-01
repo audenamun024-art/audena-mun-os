@@ -4,6 +4,7 @@ import {
   Users, Shield, Flag, BarChart3, Home, ArrowLeft, Trash2, Image as ImageIcon,
   Video, Sparkles, Eye, Activity, RefreshCw, Search, AlertTriangle, ExternalLink,
   Building2, Plus, Mail, Copy, Globe, Phone, X, Loader2, Award, KeyRound,
+  Calendar, IndianRupee, MapPin, Receipt, CheckCircle2, XCircle, Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import audenaLogo from "@/assets/audena-logo.jpg";
 
-type Tab = "overview" | "users" | "organizations" | "videos" | "posts" | "stories";
+type Tab = "overview" | "users" | "organizations" | "events" | "payments" | "videos" | "posts" | "stories";
 
 const Admin = () => {
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -29,10 +30,20 @@ const Admin = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [stories, setStories] = useState<any[]>([]);
   const [organizations, setOrganizations] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [pulse, setPulse] = useState(false);
+
+  // Event dialog
+  const [eventDialog, setEventDialog] = useState<{ open: boolean; editing: any | null }>({ open: false, editing: null });
+  const [eventForm, setEventForm] = useState({
+    title: "", description: "", cover_url: "", location: "",
+    start_date: "", end_date: "", fee: 0, currency: "INR", capacity: 0, category: "MUN",
+  });
+  const [eventSubmitting, setEventSubmitting] = useState(false);
 
   // Dialogs
   const [userDetail, setUserDetail] = useState<any | null>(null);
@@ -49,18 +60,22 @@ const Admin = () => {
   const [orgCreatedCreds, setOrgCreatedCreds] = useState<{ email: string; password: string } | null>(null);
 
   const fetchAll = async () => {
-    const [profRes, vidRes, postRes, storyRes, orgRes] = await Promise.all([
+    const [profRes, vidRes, postRes, storyRes, orgRes, evRes, payRes] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("videos").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("posts").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("stories").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("organizations" as any).select("*").order("created_at", { ascending: false }),
+      supabase.from("events" as any).select("*").order("created_at", { ascending: false }).limit(500),
+      supabase.from("payments" as any).select("*").order("created_at", { ascending: false }).limit(500),
     ]);
     setProfiles(profRes.data || []);
     setVideos(vidRes.data || []);
     setPosts(postRes.data || []);
     setStories(storyRes.data || []);
     setOrganizations((orgRes.data as any[]) || []);
+    setEvents((evRes.data as any[]) || []);
+    setPayments((payRes.data as any[]) || []);
     setLoading(false);
   };
 
@@ -74,6 +89,8 @@ const Admin = () => {
       .on("postgres_changes", { event: "*", schema: "public", table: "stories" }, () => { fetchAll(); flash(); })
       .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => { fetchAll(); flash(); })
       .on("postgres_changes", { event: "*", schema: "public", table: "organizations" }, () => { fetchAll(); flash(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "events" }, () => { fetchAll(); flash(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "payments" }, () => { fetchAll(); flash(); })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, []);
@@ -209,6 +226,68 @@ const Admin = () => {
     toast.success("Organization deleted");
   };
 
+  // ---- event actions ----
+  const resetEventForm = () => setEventForm({
+    title: "", description: "", cover_url: "", location: "",
+    start_date: "", end_date: "", fee: 0, currency: "INR", capacity: 0, category: "MUN",
+  });
+  const openCreateEvent = () => { resetEventForm(); setEventDialog({ open: true, editing: null }); };
+  const openEditEvent = (e: any) => {
+    setEventForm({
+      title: e.title || "", description: e.description || "", cover_url: e.cover_url || "",
+      location: e.location || "",
+      start_date: e.start_date ? e.start_date.slice(0,16) : "",
+      end_date: e.end_date ? e.end_date.slice(0,16) : "",
+      fee: Number(e.fee) || 0, currency: e.currency || "INR",
+      capacity: e.capacity || 0, category: e.category || "MUN",
+    });
+    setEventDialog({ open: true, editing: e });
+  };
+  const submitEvent = async () => {
+    if (!eventForm.title.trim()) return toast.error("Title required");
+    setEventSubmitting(true);
+    try {
+      const payload: any = {
+        title: eventForm.title, description: eventForm.description || null,
+        cover_url: eventForm.cover_url || null, location: eventForm.location || null,
+        start_date: eventForm.start_date || null, end_date: eventForm.end_date || null,
+        fee: Number(eventForm.fee) || 0, currency: eventForm.currency,
+        capacity: Number(eventForm.capacity) || null, category: eventForm.category || null,
+        status: "published",
+      };
+      if (eventDialog.editing) {
+        const { error } = await supabase.from("events" as any).update(payload).eq("id", eventDialog.editing.id);
+        if (error) throw error;
+        toast.success("Event updated");
+      } else {
+        const { error } = await supabase.from("events" as any).insert(payload);
+        if (error) throw error;
+        toast.success("Event published");
+      }
+      setEventDialog({ open: false, editing: null });
+    } catch (e: any) { toast.error(e.message || "Failed"); }
+    finally { setEventSubmitting(false); }
+  };
+  const deleteEvent = async (e: any) => {
+    if (!confirm(`Delete event "${e.title}"?`)) return;
+    const { error } = await supabase.from("events" as any).delete().eq("id", e.id);
+    if (error) return toast.error(error.message);
+    toast.success("Event deleted");
+  };
+
+  const refundPayment = async (p: any) => {
+    if (!confirm(`Mark payment ${p.order_id} as refunded?`)) return;
+    const { error } = await supabase.from("payments" as any).update({ status: "refunded" }).eq("id", p.id);
+    if (error) return toast.error(error.message);
+    toast.success("Marked refunded");
+  };
+  const deletePayment = async (p: any) => {
+    if (!confirm("Delete this payment record?")) return;
+    const { error } = await supabase.from("payments" as any).delete().eq("id", p.id);
+    if (error) return toast.error(error.message);
+    toast.success("Payment deleted");
+  };
+
   const copyText = (label: string, text: string) => {
     navigator.clipboard.writeText(text);
     toast.success(`${label} copied`);
@@ -218,19 +297,22 @@ const Admin = () => {
   const filtered = (list: any[], keys: string[]) =>
     !search ? list : list.filter((x) => keys.some((k) => (x[k] || "").toString().toLowerCase().includes(search.toLowerCase())));
 
+  const totalRevenue = payments.filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.amount || 0), 0);
   const stats = [
     { label: "Users", value: profiles.length, icon: Users, color: "from-blue-500 to-cyan-500" },
-    { label: "Organizations", value: organizations.length, icon: Building2, color: "from-violet-500 to-blue-500" },
+    { label: "Orgs", value: organizations.length, icon: Building2, color: "from-violet-500 to-blue-500" },
+    { label: "Events", value: events.length, icon: Calendar, color: "from-emerald-500 to-blue-500" },
+    { label: "Revenue ₹", value: totalRevenue, icon: IndianRupee, color: "from-amber-500 to-emerald-500" },
     { label: "Videos", value: videos.length, icon: Video, color: "from-indigo-500 to-blue-500" },
-    { label: "Posts", value: posts.length, icon: ImageIcon, color: "from-cyan-500 to-sky-500" },
-    { label: "Stories", value: stories.length, icon: Sparkles, color: "from-sky-500 to-blue-500" },
     { label: "Flagged", value: videos.filter((v) => v.flagged).length, icon: AlertTriangle, color: "from-amber-500 to-orange-500" },
   ];
 
   const tabs: { key: Tab; label: string; icon: any; count: number }[] = [
     { key: "overview", label: "Overview", icon: BarChart3, count: 0 },
     { key: "users", label: "Users", icon: Users, count: profiles.length },
-    { key: "organizations", label: "Organizations", icon: Building2, count: organizations.length },
+    { key: "organizations", label: "Orgs", icon: Building2, count: organizations.length },
+    { key: "events", label: "Events", icon: Calendar, count: events.length },
+    { key: "payments", label: "Payments", icon: Receipt, count: payments.length },
     { key: "videos", label: "Videos", icon: Video, count: videos.length },
     { key: "posts", label: "Posts", icon: ImageIcon, count: posts.length },
     { key: "stories", label: "Stories", icon: Sparkles, count: stories.length },
@@ -287,6 +369,11 @@ const Admin = () => {
             {activeTab === "organizations" && (
               <Button size="sm" className="h-10 bg-gradient-primary text-primary-foreground rounded-xl shadow-glow" onClick={openCreateOrg}>
                 <Plus className="h-4 w-4 mr-1" /> New Org
+              </Button>
+            )}
+            {activeTab === "events" && (
+              <Button size="sm" className="h-10 bg-gradient-primary text-primary-foreground rounded-xl shadow-glow" onClick={openCreateEvent}>
+                <Plus className="h-4 w-4 mr-1" /> New Event
               </Button>
             )}
           </div>
@@ -472,6 +559,81 @@ const Admin = () => {
                 </div>
               ))}
             </div>
+          </section>
+        )}
+
+        {/* EVENTS */}
+        {activeTab === "events" && (
+          <section className="space-y-2 animate-fade-in">
+            {filtered(events, ["title", "location", "category"]).map((e) => (
+              <div key={e.id} className="glass-panel rounded-xl p-3 flex items-center gap-3 shadow-card">
+                <div className="w-14 h-14 rounded-lg bg-secondary overflow-hidden shrink-0 flex items-center justify-center">
+                  {e.cover_url ? <img src={e.cover_url} className="w-full h-full object-cover" alt="" /> : <Calendar className="h-5 w-5 text-muted-foreground" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm text-foreground truncate">{e.title}</p>
+                  <p className="text-[11px] text-muted-foreground truncate flex items-center gap-2">
+                    {e.location && <span className="flex items-center gap-0.5"><MapPin className="h-3 w-3" />{e.location}</span>}
+                    {e.start_date && <span>· {new Date(e.start_date).toLocaleDateString()}</span>}
+                    <span>· ₹{Number(e.fee || 0).toLocaleString()}</span>
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => openEditEvent(e)}>Edit</Button>
+                  <Button size="sm" variant="outline" className="h-8 text-destructive border-destructive/30" onClick={() => deleteEvent(e)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+            {events.length === 0 && (
+              <div className="glass-panel rounded-2xl p-12 text-center">
+                <Calendar className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                <p className="font-semibold mb-1">No events published</p>
+                <Button onClick={openCreateEvent} className="mt-3 bg-gradient-primary text-primary-foreground"><Plus className="h-4 w-4 mr-1" /> Create Event</Button>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* PAYMENTS */}
+        {activeTab === "payments" && (
+          <section className="glass-panel rounded-2xl p-2 animate-fade-in overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order</TableHead>
+                  <TableHead>User</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="hidden md:table-cell">Date</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered(payments, ["order_id", "purpose", "status"]).map((p) => {
+                  const u = profiles.find((pr) => pr.user_id === p.user_id);
+                  const StatusIcon = p.status === "paid" ? CheckCircle2 : (p.status === "pending" || p.status === "created") ? Clock : XCircle;
+                  const color = p.status === "paid" ? "text-success" : (p.status === "pending" || p.status === "created") ? "text-amber-400" : "text-destructive";
+                  return (
+                    <TableRow key={p.id}>
+                      <TableCell className="font-mono text-[11px]">{p.order_id}</TableCell>
+                      <TableCell className="text-sm truncate max-w-[140px]">{u?.full_name || p.user_id.slice(0, 8)}</TableCell>
+                      <TableCell className="font-semibold">₹{Number(p.amount).toLocaleString()}</TableCell>
+                      <TableCell><span className={`inline-flex items-center gap-1 text-xs ${color}`}><StatusIcon className="h-3.5 w-3.5" />{p.status}</span></TableCell>
+                      <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-right">
+                        {p.status === "paid" && <Button size="sm" variant="ghost" className="h-7 text-[11px]" onClick={() => refundPayment(p)}>Refund</Button>}
+                        <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive" onClick={() => deletePayment(p)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+            {payments.length === 0 && <p className="text-sm text-muted-foreground text-center py-12">No payments yet</p>}
           </section>
         )}
 
@@ -714,6 +876,41 @@ const Admin = () => {
               }}><Copy className="h-4 w-4 mr-1.5" /> Copy both</Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* EVENT DIALOG */}
+      <Dialog open={eventDialog.open} onOpenChange={(o) => !o && setEventDialog({ open: false, editing: null })}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" />
+              {eventDialog.editing ? "Edit event" : "Create new event"}
+            </DialogTitle>
+            <DialogDescription>Published events appear immediately on the Events page.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div><Label className="text-xs">Title *</Label><Input value={eventForm.title} onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })} /></div>
+            <div><Label className="text-xs">Description</Label><Textarea value={eventForm.description} onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs">Cover image URL</Label><Input value={eventForm.cover_url} onChange={(e) => setEventForm({ ...eventForm, cover_url: e.target.value })} /></div>
+              <div><Label className="text-xs">Category</Label><Input value={eventForm.category} onChange={(e) => setEventForm({ ...eventForm, category: e.target.value })} /></div>
+            </div>
+            <div><Label className="text-xs">Location</Label><Input value={eventForm.location} onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs">Start date</Label><Input type="datetime-local" value={eventForm.start_date} onChange={(e) => setEventForm({ ...eventForm, start_date: e.target.value })} /></div>
+              <div><Label className="text-xs">End date</Label><Input type="datetime-local" value={eventForm.end_date} onChange={(e) => setEventForm({ ...eventForm, end_date: e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs">Fee (₹)</Label><Input type="number" value={eventForm.fee} onChange={(e) => setEventForm({ ...eventForm, fee: Number(e.target.value) })} /></div>
+              <div><Label className="text-xs">Capacity</Label><Input type="number" value={eventForm.capacity} onChange={(e) => setEventForm({ ...eventForm, capacity: Number(e.target.value) })} /></div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEventDialog({ open: false, editing: null })}>Cancel</Button>
+            <Button className="bg-gradient-primary text-primary-foreground" onClick={submitEvent} disabled={eventSubmitting}>
+              {eventSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (eventDialog.editing ? "Save" : "Publish event")}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

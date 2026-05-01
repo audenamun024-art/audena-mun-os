@@ -74,25 +74,36 @@ const StoryRow = () => {
 
   return (
     <>
-      <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 py-4 border-b border-border">
+      <div className="flex gap-4 overflow-x-auto scrollbar-hide px-4 py-4 border-b border-border">
         {/* Your story */}
         <button
           onClick={() => user ? setUploadOpen(true) : toast.error("Sign in first")}
-          className="flex flex-col items-center gap-1.5 shrink-0 group"
+          className="flex flex-col items-center gap-2 shrink-0 group"
         >
-          <div className="relative w-16 h-16 rounded-full bg-secondary flex items-center justify-center border-2 border-dashed border-border group-hover:border-primary transition-colors">
-            <Plus className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+          <div className="story-ring relative">
+            <div className="story-ring-inner w-[68px] h-[68px] rounded-full bg-card flex items-center justify-center overflow-hidden">
+              {user ? (
+                <span className="text-foreground text-sm font-bold">
+                  {(user.user_metadata?.full_name || user.email || "U").slice(0, 2).toUpperCase()}
+                </span>
+              ) : (
+                <Plus className="h-5 w-5 text-muted-foreground" />
+              )}
+            </div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full bg-primary border-2 border-background flex items-center justify-center shadow-glow">
+              <Plus className="h-3 w-3 text-white" strokeWidth={3} />
+            </div>
           </div>
-          <span className="text-[10px] text-muted-foreground">Your story</span>
+          <span className="text-[11px] text-foreground font-medium">Your Story</span>
         </button>
 
         {stories.map((s, i) => {
           const p = profiles[s.user_id];
           const initials = p?.full_name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "U";
           return (
-            <button key={s.id} onClick={() => setViewerIdx(i)} className="flex flex-col items-center gap-1.5 shrink-0">
-              <div className="p-[2px] rounded-full bg-gradient-primary shadow-glow">
-                <div className="w-16 h-16 rounded-full bg-card flex items-center justify-center overflow-hidden border-2 border-background">
+            <button key={s.id} onClick={() => setViewerIdx(i)} className="flex flex-col items-center gap-2 shrink-0">
+              <div className="story-ring">
+                <div className="story-ring-inner w-[68px] h-[68px] rounded-full bg-card flex items-center justify-center overflow-hidden">
                   {p?.avatar_url ? (
                     <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
                   ) : (
@@ -100,7 +111,7 @@ const StoryRow = () => {
                   )}
                 </div>
               </div>
-              <span className="text-[10px] text-muted-foreground truncate max-w-[64px]">{p?.full_name?.split(" ")[0] || "User"}</span>
+              <span className="text-[11px] text-foreground font-medium truncate max-w-[78px]">{p?.full_name?.split(" ")[0] || "User"}</span>
             </button>
           );
         })}

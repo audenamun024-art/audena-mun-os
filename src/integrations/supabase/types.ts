@@ -97,6 +97,104 @@ export type Database = {
         }
         Relationships: []
       }
+      event_registrations: {
+        Row: {
+          amount: number | null
+          created_at: string
+          event_id: string
+          id: string
+          payment_id: string | null
+          payment_status: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          event_id: string
+          id?: string
+          payment_id?: string | null
+          payment_status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          payment_id?: string | null
+          payment_status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_registrations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          capacity: number | null
+          category: string | null
+          cover_url: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          end_date: string | null
+          fee: number
+          id: string
+          location: string | null
+          organization_id: string | null
+          organizer_id: string | null
+          start_date: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          capacity?: number | null
+          category?: string | null
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          end_date?: string | null
+          fee?: number
+          id?: string
+          location?: string | null
+          organization_id?: string | null
+          organizer_id?: string | null
+          start_date?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number | null
+          category?: string | null
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          end_date?: string | null
+          fee?: number
+          id?: string
+          location?: string | null
+          organization_id?: string | null
+          organizer_id?: string | null
+          start_date?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -209,6 +307,65 @@ export type Database = {
           website?: string | null
         }
         Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          cf_payment_id: string | null
+          created_at: string
+          currency: string
+          event_id: string | null
+          id: string
+          order_id: string
+          payment_session_id: string | null
+          provider: string
+          purpose: string | null
+          raw: Json | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          cf_payment_id?: string | null
+          created_at?: string
+          currency?: string
+          event_id?: string | null
+          id?: string
+          order_id: string
+          payment_session_id?: string | null
+          provider?: string
+          purpose?: string | null
+          raw?: Json | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          cf_payment_id?: string | null
+          created_at?: string
+          currency?: string
+          event_id?: string | null
+          id?: string
+          order_id?: string
+          payment_session_id?: string | null
+          provider?: string
+          purpose?: string | null
+          raw?: Json | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       post_likes: {
         Row: {

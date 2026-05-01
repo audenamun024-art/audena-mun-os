@@ -179,4 +179,33 @@
     to { transform: rotate(360deg); }
   }
   .story-ring-spin { animation: story-ring-spin 3s linear infinite; }
+
+  /* Instagram-like segmented blue arc story ring */
+  .story-ring {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: 9999px;
+    padding: 6px;
+    background:
+      conic-gradient(
+        hsl(217 91% 60%) 0deg 70deg,
+        transparent 70deg 90deg,
+        hsl(217 91% 60%) 90deg 160deg,
+        transparent 160deg 180deg,
+        hsl(217 91% 60%) 180deg 250deg,
+        transparent 250deg 270deg,
+        hsl(217 91% 60%) 270deg 340deg,
+        transparent 340deg 360deg
+      );
+    -webkit-mask: radial-gradient(circle, transparent 30px, black 31px);
+            mask: radial-gradient(circle, transparent 30px, black 31px);
+    filter: drop-shadow(0 0 6px hsl(217 91% 60% / 0.55));
+  }
+  .story-ring-inner {
+    position: absolute;
+    inset: 6px;
+    border: 2px solid hsl(var(--background));
+  }
 }
+
