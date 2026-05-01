@@ -4,6 +4,7 @@ import {
   Users, Shield, Flag, BarChart3, Home, ArrowLeft, Trash2, Image as ImageIcon,
   Video, Sparkles, Eye, Activity, RefreshCw, Search, AlertTriangle, ExternalLink,
   Building2, Plus, Mail, Copy, Globe, Phone, X, Loader2, Award, KeyRound,
+  Calendar, IndianRupee, MapPin, Receipt, CheckCircle2, XCircle, Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import audenaLogo from "@/assets/audena-logo.jpg";
 
-type Tab = "overview" | "users" | "organizations" | "videos" | "posts" | "stories";
+type Tab = "overview" | "users" | "organizations" | "events" | "payments" | "videos" | "posts" | "stories";
 
 const Admin = () => {
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -29,10 +30,20 @@ const Admin = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [stories, setStories] = useState<any[]>([]);
   const [organizations, setOrganizations] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [pulse, setPulse] = useState(false);
+
+  // Event dialog
+  const [eventDialog, setEventDialog] = useState<{ open: boolean; editing: any | null }>({ open: false, editing: null });
+  const [eventForm, setEventForm] = useState({
+    title: "", description: "", cover_url: "", location: "",
+    start_date: "", end_date: "", fee: 0, currency: "INR", capacity: 0, category: "MUN",
+  });
+  const [eventSubmitting, setEventSubmitting] = useState(false);
 
   // Dialogs
   const [userDetail, setUserDetail] = useState<any | null>(null);
@@ -49,18 +60,22 @@ const Admin = () => {
   const [orgCreatedCreds, setOrgCreatedCreds] = useState<{ email: string; password: string } | null>(null);
 
   const fetchAll = async () => {
-    const [profRes, vidRes, postRes, storyRes, orgRes] = await Promise.all([
+    const [profRes, vidRes, postRes, storyRes, orgRes, evRes, payRes] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("videos").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("posts").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("stories").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("organizations" as any).select("*").order("created_at", { ascending: false }),
+      supabase.from("events" as any).select("*").order("created_at", { ascending: false }).limit(500),
+      supabase.from("payments" as any).select("*").order("created_at", { ascending: false }).limit(500),
     ]);
     setProfiles(profRes.data || []);
     setVideos(vidRes.data || []);
     setPosts(postRes.data || []);
     setStories(storyRes.data || []);
     setOrganizations((orgRes.data as any[]) || []);
+    setEvents((evRes.data as any[]) || []);
+    setPayments((payRes.data as any[]) || []);
     setLoading(false);
   };
 
@@ -74,6 +89,8 @@ const Admin = () => {
       .on("postgres_changes", { event: "*", schema: "public", table: "stories" }, () => { fetchAll(); flash(); })
       .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => { fetchAll(); flash(); })
       .on("postgres_changes", { event: "*", schema: "public", table: "organizations" }, () => { fetchAll(); flash(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "events" }, () => { fetchAll(); flash(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "payments" }, () => { fetchAll(); flash(); })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, []);
