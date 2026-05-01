@@ -562,6 +562,81 @@ const Admin = () => {
           </section>
         )}
 
+        {/* EVENTS */}
+        {activeTab === "events" && (
+          <section className="space-y-2 animate-fade-in">
+            {filtered(events, ["title", "location", "category"]).map((e) => (
+              <div key={e.id} className="glass-panel rounded-xl p-3 flex items-center gap-3 shadow-card">
+                <div className="w-14 h-14 rounded-lg bg-secondary overflow-hidden shrink-0 flex items-center justify-center">
+                  {e.cover_url ? <img src={e.cover_url} className="w-full h-full object-cover" alt="" /> : <Calendar className="h-5 w-5 text-muted-foreground" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm text-foreground truncate">{e.title}</p>
+                  <p className="text-[11px] text-muted-foreground truncate flex items-center gap-2">
+                    {e.location && <span className="flex items-center gap-0.5"><MapPin className="h-3 w-3" />{e.location}</span>}
+                    {e.start_date && <span>· {new Date(e.start_date).toLocaleDateString()}</span>}
+                    <span>· ₹{Number(e.fee || 0).toLocaleString()}</span>
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => openEditEvent(e)}>Edit</Button>
+                  <Button size="sm" variant="outline" className="h-8 text-destructive border-destructive/30" onClick={() => deleteEvent(e)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+            {events.length === 0 && (
+              <div className="glass-panel rounded-2xl p-12 text-center">
+                <Calendar className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                <p className="font-semibold mb-1">No events published</p>
+                <Button onClick={openCreateEvent} className="mt-3 bg-gradient-primary text-primary-foreground"><Plus className="h-4 w-4 mr-1" /> Create Event</Button>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* PAYMENTS */}
+        {activeTab === "payments" && (
+          <section className="glass-panel rounded-2xl p-2 animate-fade-in overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order</TableHead>
+                  <TableHead>User</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="hidden md:table-cell">Date</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered(payments, ["order_id", "purpose", "status"]).map((p) => {
+                  const u = profiles.find((pr) => pr.user_id === p.user_id);
+                  const StatusIcon = p.status === "paid" ? CheckCircle2 : (p.status === "pending" || p.status === "created") ? Clock : XCircle;
+                  const color = p.status === "paid" ? "text-success" : (p.status === "pending" || p.status === "created") ? "text-amber-400" : "text-destructive";
+                  return (
+                    <TableRow key={p.id}>
+                      <TableCell className="font-mono text-[11px]">{p.order_id}</TableCell>
+                      <TableCell className="text-sm truncate max-w-[140px]">{u?.full_name || p.user_id.slice(0, 8)}</TableCell>
+                      <TableCell className="font-semibold">₹{Number(p.amount).toLocaleString()}</TableCell>
+                      <TableCell><span className={`inline-flex items-center gap-1 text-xs ${color}`}><StatusIcon className="h-3.5 w-3.5" />{p.status}</span></TableCell>
+                      <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-right">
+                        {p.status === "paid" && <Button size="sm" variant="ghost" className="h-7 text-[11px]" onClick={() => refundPayment(p)}>Refund</Button>}
+                        <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive" onClick={() => deletePayment(p)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+            {payments.length === 0 && <p className="text-sm text-muted-foreground text-center py-12">No payments yet</p>}
+          </section>
+        )}
+
         {/* VIDEOS */}
         {activeTab === "videos" && (
           <section className="space-y-2 animate-fade-in">
