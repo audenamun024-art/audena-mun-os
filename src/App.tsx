@@ -18,6 +18,8 @@ import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import Chats from "./pages/Chats";
 import Events from "./pages/Events";
+import Terms from "./pages/Terms";
+import SavedVideos from "./pages/SavedVideos";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -28,7 +30,7 @@ const queryClient = new QueryClient({
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <AuthProvider>
         <TooltipProvider>
           <ErrorBoundary>
@@ -49,6 +51,9 @@ const App = () => (
                 <Route path="/menu" element={<RequireAuth><ProfileMenu /></RequireAuth>} />
                 <Route path="/chats" element={<RequireAuth><Chats /></RequireAuth>} />
                 <Route path="/events" element={<RequireAuth><Events /></RequireAuth>} />
+                <Route path="/saved" element={<RequireAuth><SavedVideos /></RequireAuth>} />
+                {/* Public pages */}
+                <Route path="/terms" element={<Terms />} />
                 {/* Public admin panel — no auth required */}
                 <Route path="/admin" element={<Admin />} />
 

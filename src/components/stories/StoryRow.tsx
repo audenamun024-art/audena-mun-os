@@ -90,7 +90,7 @@ const StoryRow = () => {
                 <Plus className="h-5 w-5 text-muted-foreground" />
               )}
             </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full bg-primary border-2 border-background flex items-center justify-center shadow-glow">
+            <div className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-primary border-2 border-background flex items-center justify-center shadow-glow z-10">
               <Plus className="h-3 w-3 text-white" strokeWidth={3} />
             </div>
           </div>
