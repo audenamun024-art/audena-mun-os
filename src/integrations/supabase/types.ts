@@ -49,6 +49,38 @@ export type Database = {
           },
         ]
       }
+      committees: {
+        Row: {
+          capacity: number
+          created_at: string
+          event_id: string
+          id: string
+          name: string
+        }
+        Insert: {
+          capacity?: number
+          created_at?: string
+          event_id: string
+          id?: string
+          name: string
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          event_id?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "committees_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       connections: {
         Row: {
           created_at: string | null
@@ -317,7 +349,9 @@ export type Database = {
           event_id: string | null
           id: string
           order_id: string
+          org_amount: number
           payment_session_id: string | null
+          platform_fee: number
           provider: string
           purpose: string | null
           raw: Json | null
@@ -333,7 +367,9 @@ export type Database = {
           event_id?: string | null
           id?: string
           order_id: string
+          org_amount?: number
           payment_session_id?: string | null
+          platform_fee?: number
           provider?: string
           purpose?: string | null
           raw?: Json | null
@@ -349,7 +385,9 @@ export type Database = {
           event_id?: string | null
           id?: string
           order_id?: string
+          org_amount?: number
           payment_session_id?: string | null
+          platform_fee?: number
           provider?: string
           purpose?: string | null
           raw?: Json | null

@@ -3,15 +3,17 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, MapPin, Users, IndianRupee, Sparkles, Search } from "lucide-react";
+import { Calendar, MapPin, Users, IndianRupee, Sparkles, Search, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import CashfreePaymentDialog from "@/components/payments/CashfreePaymentDialog";
+import { toast } from "sonner";
 
 type EventRow = {
   id: string; title: string; description: string | null; cover_url: string | null;
   location: string | null; start_date: string | null; end_date: string | null;
   fee: number; currency: string; capacity: number | null; category: string | null; status: string;
+  created_by: string | null; organizer_id: string | null;
 };
 
 const Events = () => {
@@ -43,9 +45,17 @@ const Events = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  const filtered = events.filter((e) =>
-    !q || `${e.title} ${e.location || ""} ${e.category || ""}`.toLowerCase().includes(q.toLowerCase())
-  );
+  const filtered = events.filter((e) => {
+    const term = q.trim().toLowerCase();
+    return !term || `${e.title} ${e.location || ""} ${e.category || ""} ${e.id}`.toLowerCase().includes(term);
+  });
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this event? Committees and registrations will also be removed.")) return;
+    const { error } = await supabase.from("events" as any).delete().eq("id", id);
+    if (error) toast.error(error.message);
+    else { toast.success("Event deleted"); fetchAll(); }
+  };
 
   return (
     <AppLayout>
@@ -107,14 +117,21 @@ const Events = () => {
                       <span className="text-base font-bold text-foreground flex items-center">
                         {isFree ? "Free" : (<><IndianRupee className="h-4 w-4" />{Number(e.fee).toLocaleString()}</>)}
                       </span>
-                      {registered ? (
-                        <span className="text-[11px] font-semibold text-success bg-success/10 px-2.5 py-1 rounded-full">Registered ✓</span>
-                      ) : (
-                        <Button size="sm" className="h-8 rounded-lg bg-gradient-to-r from-primary to-accent text-primary-foreground"
-                          onClick={() => isFree ? alert("Free event — registration coming soon") : setPayDialog(e)}>
-                          {isFree ? "Register" : "Pay & Register"}
-                        </Button>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {user && (e.created_by === user.id || e.organizer_id === user.id) && (
+                          <button onClick={() => handleDelete(e.id)} className="text-destructive hover:bg-destructive/10 p-1.5 rounded-lg" title="Delete event">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        {registered ? (
+                          <span className="text-[11px] font-semibold text-success bg-success/10 px-2.5 py-1 rounded-full">Registered ✓</span>
+                        ) : (
+                          <Button size="sm" className="h-8 rounded-lg bg-primary text-primary-foreground"
+                            onClick={() => isFree ? alert("Free event — registration coming soon") : setPayDialog(e)}>
+                            {isFree ? "Register" : "Pay & Register"}
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

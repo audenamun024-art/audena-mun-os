@@ -167,12 +167,12 @@ const BuzzVideoCard = ({
               <span className="text-xs font-semibold text-foreground">{comments.length}</span>
             </button>
             <button onClick={() => onAccurate?.(video.id)} className="flex items-center gap-1.5 group">
-              <CheckCheck className={`h-6 w-6 transition-all duration-300 ease-out group-active:scale-150 ${isAccurate ? "text-primary animate-[pulse_0.4s_ease-in-out]" : "text-foreground hover:text-primary/60"}`} />
-              <span className={`text-xs font-semibold transition-all duration-200 ${isAccurate ? "text-primary" : "text-foreground"}`}>{accurateCount}</span>
+              <CheckCheck className={`h-6 w-6 transition-all duration-300 ease-out group-active:scale-150 ${isAccurate ? "text-[#00FF9C] animate-[pulse_0.4s_ease-in-out]" : "text-foreground hover:text-[#00FF9C]/60"}`} style={isAccurate ? { filter: "drop-shadow(0 0 6px #00FF9C)" } : undefined} />
+              <span className={`text-xs font-semibold transition-all duration-200 ${isAccurate ? "text-[#00FF9C]" : "text-foreground"}`}>{accurateCount}</span>
             </button>
             <button onClick={() => onCheck?.(video.id)} className="flex items-center gap-1.5 group">
-              <CheckCircle2 className={`h-6 w-6 transition-all duration-300 ease-out group-active:scale-150 ${isChecked ? "text-green-500 fill-current animate-[pulse_0.4s_ease-in-out]" : "text-foreground hover:text-green-500/60"}`} />
-              <span className={`text-xs font-semibold transition-all duration-200 ${isChecked ? "text-green-500" : "text-foreground"}`}>{checkCount}</span>
+              <CheckCircle2 className={`h-6 w-6 transition-all duration-300 ease-out group-active:scale-150 ${isChecked ? "text-[#FFD600] fill-current animate-[pulse_0.4s_ease-in-out]" : "text-foreground hover:text-[#FFD600]/60"}`} style={isChecked ? { filter: "drop-shadow(0 0 6px #FFD600)" } : undefined} />
+              <span className={`text-xs font-semibold transition-all duration-200 ${isChecked ? "text-[#FFD600]" : "text-foreground"}`}>{checkCount}</span>
             </button>
           </div>
           <div className="flex items-center gap-4">

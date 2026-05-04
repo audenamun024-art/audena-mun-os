@@ -17,10 +17,10 @@ const AppSidebar = () => {
 
   const mainItems = [
     { title: "Home", url: "/", icon: Home },
-    { title: "Explore", url: "/explore", icon: Compass },
-    { title: "Events", url: "/events", icon: Calendar },
+    { title: "Drops", url: "/explore", icon: Compass },
+    { title: "Network", url: "/chats", icon: MessageCircle },
+    { title: "Connect", url: "/events", icon: Calendar },
     { title: "Buzz", url: "/buzz", icon: Play },
-    { title: "Chats", url: "/chats", icon: MessageCircle },
     { title: "Profile", url: "/profile", icon: User },
   ];
 
@@ -51,10 +51,10 @@ const AppSidebar = () => {
         <div className="flex items-center gap-2.5">
           {!collapsed ? (
             <span className="text-lg font-display font-bold tracking-tight text-foreground">
-              Audena<span className="text-gradient-primary">Hub</span>
+              AudenaHub
             </span>
           ) : (
-            <span className="text-lg font-display font-bold text-gradient-primary">A</span>
+            <span className="text-lg font-display font-bold text-foreground">A</span>
           )}
         </div>
       </SidebarHeader>

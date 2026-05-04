@@ -1,16 +1,13 @@
 import { useNavigate } from "react-router-dom";
-import { User, Settings, Bell, LogOut, HelpCircle, FileText, Shield, ArrowLeft, Bookmark } from "lucide-react";
+import { Settings, LogOut, ArrowLeft, ListChecks, Bookmark, FileText } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 const menuItems = [
-  { label: "Profile", icon: User, path: "/profile" },
+  { label: "Tasks", icon: ListChecks, path: "/profile?tab=tasks" },
   { label: "Saved Videos", icon: Bookmark, path: "/saved" },
   { label: "Settings", icon: Settings, path: null },
-  { label: "Notifications", icon: Bell, path: null },
-  { label: "Help", icon: HelpCircle, path: null },
   { label: "Terms of Service", icon: FileText, path: "/terms" },
-  { label: "Privacy", icon: Shield, path: "/terms" },
 ];
 
 const ProfileMenu = () => {
