@@ -344,12 +344,12 @@ const Profile = () => {
               <Grid3x3 className="h-3.5 w-3.5" /> Drops <span className="text-[10px] opacity-70">({posts.length})</span>
             </button>
             <button
-              onClick={() => setContentTab("transactions")}
+              onClick={() => setContentTab("tasks")}
               className={`flex items-center gap-1.5 px-5 py-2 text-xs font-semibold uppercase tracking-wider transition-colors border-b-2 ${
-                contentTab === "transactions" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+                contentTab === "tasks" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Receipt className="h-3.5 w-3.5" /> Transactions <span className="text-[10px] opacity-70">({payments.length})</span>
+              <Receipt className="h-3.5 w-3.5" /> Tasks <span className="text-[10px] opacity-70">({payments.length})</span>
             </button>
           </div>
 
@@ -416,12 +416,12 @@ const Profile = () => {
             </>
           )}
 
-          {contentTab === "transactions" && (
+          {contentTab === "tasks" && (
             <>
               {payments.length === 0 ? (
                 <div className="text-center py-12 glass-panel rounded-2xl">
                   <Receipt className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="font-semibold text-sm">No transactions yet</p>
+                  <p className="font-semibold text-sm">No tasks yet</p>
                 </div>
               ) : (
                 <div className="space-y-2">
