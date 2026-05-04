@@ -15,7 +15,7 @@ import { useConnections } from "@/hooks/useConnections";
 import { toast } from "sonner";
 import { uploadPublicFile } from "@/lib/storage";
 
-type ContentTab = "videos" | "posts" | "transactions";
+type ContentTab = "videos" | "posts" | "tasks";
 
 const MUN_OPTIONS = ["No experience", "1–3 conferences", "4–10 conferences", "10+ conferences"];
 

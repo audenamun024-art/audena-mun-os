@@ -51,10 +51,10 @@ const AppSidebar = () => {
         <div className="flex items-center gap-2.5">
           {!collapsed ? (
             <span className="text-lg font-display font-bold tracking-tight text-foreground">
-              Audena<span className="text-gradient-primary">Hub</span>
+              AudenaHub
             </span>
           ) : (
-            <span className="text-lg font-display font-bold text-gradient-primary">A</span>
+            <span className="text-lg font-display font-bold text-foreground">A</span>
           )}
         </div>
       </SidebarHeader>
