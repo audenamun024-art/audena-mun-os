@@ -76,10 +76,13 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
       { auth: { persistSession: false } },
     );
+    const platformFee = 29; // ₹29 platform fee per transaction
+    const orgAmount = Math.max(0, Number(amount) - platformFee);
     await supabase.from("payments").insert({
       user_id, event_id, provider: "cashfree", order_id: orderId,
       payment_session_id: cfData.payment_session_id, amount, currency,
       status: "created", purpose, raw: cfData,
+      platform_fee: platformFee, org_amount: orgAmount,
     });
 
     return new Response(JSON.stringify({

@@ -16,14 +16,19 @@ const Explore = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       setLoading(true);
-      let q = supabase.from("posts").select("*").order("likes_count", { ascending: false }).limit(40);
+      const term = query.trim().toLowerCase();
+      let q = supabase.from("posts").select("*").order("likes_count", { ascending: false }).limit(60);
       if (category !== "For You" && category !== "Trending") {
         q = q.eq("category", category.toLowerCase());
       }
       const { data } = await q;
       let results = data || [];
-      if (query.trim()) {
-        results = results.filter((p: any) => (p.caption || "").toLowerCase().includes(query.toLowerCase()));
+      if (term) {
+        results = results.filter((p: any) =>
+          (p.caption || "").toLowerCase().includes(term) ||
+          String(p.id || "").toLowerCase().includes(term) ||
+          String(p.user_id || "").toLowerCase().includes(term)
+        );
       }
       setPosts(results);
       setLoading(false);
