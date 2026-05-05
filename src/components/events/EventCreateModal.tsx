@@ -98,22 +98,33 @@ const EventCreateModal = ({
           <div className="pt-2 border-t border-border">
             <div className="flex items-center justify-between mb-2">
               <Label className="text-[11px] text-muted-foreground font-semibold">Committees</Label>
-              <button type="button" onClick={() => setCommittees([...committees, { name: "", capacity: "" }])}
-                className="text-[11px] text-primary font-semibold flex items-center gap-1">
+              <button type="button" onClick={() => setCommittees([...committees, { code: "", name: "", capacity: "" }])}
+                className="text-[11px] text-accent font-semibold flex items-center gap-1">
                 <Plus className="h-3 w-3" /> Add
               </button>
             </div>
             <div className="space-y-2">
               {committees.map((c, i) => (
-                <div key={i} className="flex gap-2">
-                  <Input placeholder="Committee name (e.g. UNGA)" value={c.name}
-                    onChange={(e) => updateCommittee(i, "name", e.target.value)}
-                    className="bg-card border-border rounded-xl h-10 flex-1" />
+                <div key={i} className="flex gap-2 items-start">
+                  <div className="flex-1">
+                    <CommitteeDropdown
+                      value={c.code ? [c.code] : []}
+                      onChange={(codes) => {
+                        const code = codes[0] || "";
+                        const opt = DEFAULT_COMMITTEES.find((o) => o.code === code);
+                        const arr = [...committees];
+                        arr[i] = { ...arr[i], code, name: opt ? `${opt.code} – ${opt.name}` : "" };
+                        setCommittees(arr);
+                      }}
+                    />
+                  </div>
                   <Input placeholder="Cap" type="number" value={c.capacity}
-                    onChange={(e) => updateCommittee(i, "capacity", e.target.value)}
-                    className="bg-card border-border rounded-xl h-10 w-20" />
+                    onChange={(e) => {
+                      const arr = [...committees]; arr[i] = { ...arr[i], capacity: e.target.value }; setCommittees(arr);
+                    }}
+                    className="bg-card border-border rounded-xl h-12 w-20" />
                   {committees.length > 1 && (
-                    <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-xl shrink-0"
+                    <Button type="button" variant="outline" size="icon" className="h-12 w-12 rounded-xl shrink-0"
                       onClick={() => setCommittees(committees.filter((_, idx) => idx !== i))}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
