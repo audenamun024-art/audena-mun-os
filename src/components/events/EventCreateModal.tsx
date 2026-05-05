@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import CommitteeDropdown, { DEFAULT_COMMITTEES } from "@/components/committees/CommitteeDropdown";
 
-type Committee = { name: string; capacity: string };
+type Committee = { code: string; name: string; capacity: string };
 
 const EventCreateModal = ({
   open, onClose, onCreated, userId,
