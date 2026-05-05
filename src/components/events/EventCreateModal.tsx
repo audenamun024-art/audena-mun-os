@@ -17,7 +17,7 @@ const EventCreateModal = ({
     title: "", description: "", location: "",
     start_date: "", end_date: "", fee: "0",
   });
-  const [committees, setCommittees] = useState<Committee[]>([{ name: "", capacity: "" }]);
+  const [committees, setCommittees] = useState<Committee[]>([{ code: "", name: "", capacity: "" }]);
   const [saving, setSaving] = useState(false);
 
   if (!open) return null;
