@@ -21,8 +21,10 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import audenaLogo from "@/assets/audena-logo.jpg";
+import AdminTasks from "@/components/admin/AdminTasks";
+import { ListChecks } from "lucide-react";
 
-type Tab = "overview" | "users" | "organizations" | "events" | "payments" | "videos" | "posts" | "stories";
+type Tab = "overview" | "users" | "organizations" | "events" | "tasks" | "payments" | "videos" | "posts" | "stories";
 
 const Admin = () => {
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -314,6 +316,7 @@ const Admin = () => {
     { key: "users", label: "Users", icon: Users, count: profiles.length },
     { key: "organizations", label: "Orgs", icon: Building2, count: organizations.length },
     { key: "events", label: "Events", icon: Calendar, count: events.length },
+    { key: "tasks", label: "Tasks", icon: ListChecks, count: 0 },
     { key: "payments", label: "Payments", icon: Receipt, count: payments.length },
     { key: "videos", label: "Videos", icon: Video, count: videos.length },
     { key: "posts", label: "Posts", icon: ImageIcon, count: posts.length },
@@ -595,6 +598,13 @@ const Admin = () => {
                 <Button onClick={openCreateEvent} className="mt-3 bg-gradient-primary text-primary-foreground"><Plus className="h-4 w-4 mr-1" /> Create Event</Button>
               </div>
             )}
+          </section>
+        )}
+
+        {/* TASKS */}
+        {activeTab === "tasks" && (
+          <section className="animate-fade-in">
+            <AdminTasks profiles={profiles} />
           </section>
         )}
 
