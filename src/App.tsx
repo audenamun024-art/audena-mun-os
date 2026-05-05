@@ -54,8 +54,8 @@ const App = () => (
                 <Route path="/saved" element={<RequireAuth><SavedVideos /></RequireAuth>} />
                 {/* Public pages */}
                 <Route path="/terms" element={<Terms />} />
-                {/* Public admin panel — no auth required */}
-                <Route path="/admin" element={<Admin />} />
+                {/* Admin panel — admins only */}
+                <Route path="/admin" element={<RequireAuth requireAdmin={true}><Admin /></RequireAuth>} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>

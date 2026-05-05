@@ -129,6 +129,36 @@ export type Database = {
         }
         Relationships: []
       }
+      email_otps: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
       event_registrations: {
         Row: {
           amount: number | null
@@ -479,7 +509,6 @@ export type Database = {
           institution: string | null
           mun_experience: string | null
           muns_attended: number | null
-          phone: string | null
           rank_points: number | null
           secretary_names: string[] | null
           updated_at: string | null
@@ -496,7 +525,6 @@ export type Database = {
           institution?: string | null
           mun_experience?: string | null
           muns_attended?: number | null
-          phone?: string | null
           rank_points?: number | null
           secretary_names?: string[] | null
           updated_at?: string | null
@@ -513,7 +541,6 @@ export type Database = {
           institution?: string | null
           mun_experience?: string | null
           muns_attended?: number | null
-          phone?: string | null
           rank_points?: number | null
           secretary_names?: string[] | null
           updated_at?: string | null

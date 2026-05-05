@@ -23,31 +23,26 @@ const Auth = () => {
 
   const [otpStep, setOtpStep] = useState(false);
   const [otp, setOtp] = useState("");
-  const [generatedOtp, setGeneratedOtp] = useState("");
   const [sendingOtp, setSendingOtp] = useState(false);
-  const [otpExpiry, setOtpExpiry] = useState<number>(0);
 
-  const ensureProfile = async (name: string) => {
-    await supabase.rpc("ensure_profile_and_role" as any, { _full_name: name });
+  const callFn = async (path: string, body: unknown) => {
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    const res = await fetch(`https://${projectId}.supabase.co/functions/v1/${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Request failed");
+    return data;
   };
-  const generateOtpCode = () => Math.floor(100000 + Math.random() * 900000).toString();
 
   const sendOtp = async () => {
     if (!email || !password || !fullName) { toast.error("Fill in all fields first"); return; }
     setSendingOtp(true);
-    const code = generateOtpCode();
-    setGeneratedOtp(code);
     try {
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const res = await fetch(`https://${projectId}.supabase.co/functions/v1/send-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        body: JSON.stringify({ email, otp: code }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to send OTP");
+      await callFn("send-otp", { email });
       setOtpStep(true);
-      setOtpExpiry(Date.now() + 10 * 60 * 1000);
       toast.success("Verification code sent");
     } catch (err: any) {
       toast.error(err.message || "Could not send code");
@@ -55,21 +50,16 @@ const Auth = () => {
   };
 
   const verifyOtpAndSignup = async () => {
-    if (otp !== generatedOtp) { toast.error("Invalid code"); return; }
-    if (Date.now() > otpExpiry) { toast.error("Code expired"); setOtpStep(false); setOtp(""); return; }
+    if (otp.length !== 6) { toast.error("Enter the 6-digit code"); return; }
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email, password,
-        options: { data: { full_name: fullName }, emailRedirectTo: window.location.origin },
-      });
-      if (error) throw error;
-      if (data.user) {
-        await ensureProfile(fullName);
-        toast.success("Welcome to Audena Hub");
-        await refresh();
-        navigate("/");
-      }
+      await callFn("verify-otp", { email, otp, password, full_name: fullName });
+      // Auto sign-in now that the account exists & is confirmed
+      const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInErr) throw signInErr;
+      toast.success("Welcome to Audena Hub");
+      await refresh();
+      navigate("/");
     } catch (err: any) {
       toast.error(err.message || "Signup failed");
     } finally { setLoading(false); }

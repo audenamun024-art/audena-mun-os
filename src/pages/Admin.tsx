@@ -139,9 +139,9 @@ const Admin = () => {
 
   const handleSaveUser = async () => {
     if (!editingUser) return;
-    const { id, full_name, institution, bio, phone, rank_points } = editingUser;
+    const { id, full_name, institution, bio, rank_points } = editingUser;
     const { error } = await supabase.from("profiles").update({
-      full_name, institution, bio, phone, rank_points,
+      full_name, institution, bio, rank_points,
     }).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Profile updated");
@@ -197,11 +197,13 @@ const Admin = () => {
           throw new Error("Password must be at least 8 characters");
         }
         const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+        const { data: { session } } = await supabase.auth.getSession();
         const res = await fetch(`https://${projectId}.supabase.co/functions/v1/admin-create-organization`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${session?.access_token ?? ""}`,
           },
           body: JSON.stringify(orgForm),
         });
@@ -787,7 +789,7 @@ const Admin = () => {
               <div className="space-y-3">
                 <div><Label className="text-xs">Full name</Label><Input value={editingUser.full_name || ""} onChange={(e) => setEditingUser({ ...editingUser, full_name: e.target.value })} /></div>
                 <div><Label className="text-xs">Institution</Label><Input value={editingUser.institution || ""} onChange={(e) => setEditingUser({ ...editingUser, institution: e.target.value })} /></div>
-                <div><Label className="text-xs">Phone</Label><Input value={editingUser.phone || ""} onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })} /></div>
+                
                 <div><Label className="text-xs">Bio</Label><Textarea value={editingUser.bio || ""} onChange={(e) => setEditingUser({ ...editingUser, bio: e.target.value })} /></div>
                 <div><Label className="text-xs">Rank points</Label><Input type="number" value={editingUser.rank_points || 0} onChange={(e) => setEditingUser({ ...editingUser, rank_points: Number(e.target.value) })} /></div>
               </div>

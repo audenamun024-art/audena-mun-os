@@ -1,9 +1,9 @@
 project_id = "sttssfromirzkcqetikq"
 
-[functions.admin-create-organization]
+[functions.send-otp]
 verify_jwt = false
 
-[functions.send-otp]
+[functions.verify-otp]
 verify_jwt = false
 
 [functions.cashfree-create-order]
@@ -11,3 +11,4 @@ verify_jwt = false
 
 [functions.cashfree-verify-order]
 verify_jwt = false
+
