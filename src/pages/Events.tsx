@@ -115,7 +115,10 @@ const Events = () => {
                       {e.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{e.location}</span>}
                       {e.capacity && <span className="flex items-center gap-1"><Users className="h-3 w-3" />{e.capacity}</span>}
                     </div>
-                    <div className="flex items-center justify-between pt-2 border-t border-border mt-2">
+                  </div>
+                  </Link>
+                  <div className="px-4 pb-4 -mt-1">
+                    <div className="flex items-center justify-between pt-2 border-t border-border">
                       <span className="text-base font-bold text-foreground flex items-center">
                         {isFree ? "Free" : (<><IndianRupee className="h-4 w-4" />{Number(e.fee).toLocaleString()}</>)}
                       </span>
