@@ -787,7 +787,7 @@ const Admin = () => {
               <div className="space-y-3">
                 <div><Label className="text-xs">Full name</Label><Input value={editingUser.full_name || ""} onChange={(e) => setEditingUser({ ...editingUser, full_name: e.target.value })} /></div>
                 <div><Label className="text-xs">Institution</Label><Input value={editingUser.institution || ""} onChange={(e) => setEditingUser({ ...editingUser, institution: e.target.value })} /></div>
-                <div><Label className="text-xs">Phone</Label><Input value={editingUser.phone || ""} onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })} /></div>
+                
                 <div><Label className="text-xs">Bio</Label><Textarea value={editingUser.bio || ""} onChange={(e) => setEditingUser({ ...editingUser, bio: e.target.value })} /></div>
                 <div><Label className="text-xs">Rank points</Label><Input type="number" value={editingUser.rank_points || 0} onChange={(e) => setEditingUser({ ...editingUser, rank_points: Number(e.target.value) })} /></div>
               </div>
