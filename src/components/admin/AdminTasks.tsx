@@ -44,7 +44,7 @@ const AdminTasks = ({ profiles }: { profiles: any[] }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialog, setDialog] = useState<{ open: boolean; editing: Task | null }>({ open: false, editing: null });
-  const empty = { title: "", description: "", assigned_to: "", deadline: "", priority: "medium" as const, status: "pending" as const };
+  const empty = { title: "", description: "", assigned_to: "", deadline: "", priority: "medium" as Task["priority"], status: "pending" as Task["status"] };
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
 
