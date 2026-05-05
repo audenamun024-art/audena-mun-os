@@ -197,11 +197,13 @@ const Admin = () => {
           throw new Error("Password must be at least 8 characters");
         }
         const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+        const { data: { session } } = await supabase.auth.getSession();
         const res = await fetch(`https://${projectId}.supabase.co/functions/v1/admin-create-organization`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${session?.access_token ?? ""}`,
           },
           body: JSON.stringify(orgForm),
         });
