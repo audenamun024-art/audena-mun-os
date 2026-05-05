@@ -7,96 +7,106 @@
 
 @layer base {
   :root {
-    /* LIGHT MODE — clean B&W with neon accents */
+    /* LIGHT MODE — AudenaHub blue brand */
     --background: 0 0% 100%;
-    --foreground: 0 0% 6%;
+    --foreground: 222 47% 11%;
 
-    --card: 0 0% 98%;
-    --card-foreground: 0 0% 6%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 6%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 0 0% 6%;
+    /* Deep navy from logo */
+    --primary: 222 70% 22%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 156 100% 50%;
+    --primary-glow: 217 91% 60%;
 
-    --secondary: 0 0% 95%;
-    --secondary-foreground: 0 0% 6%;
+    --secondary: 217 33% 96%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 40%;
+    --muted: 217 33% 96%;
+    --muted-foreground: 215 16% 47%;
 
-    --accent: 156 100% 45%;
-    --accent-foreground: 0 0% 6%;
+    /* Bright electric blue from logo accent */
+    --accent: 217 91% 55%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 156 100% 42%;
-    --warning: 51 100% 50%;
+    --success: 156 72% 42%;
+    --warning: 45 95% 50%;
 
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 0 0% 20%;
+    --border: 220 14% 90%;
+    --input: 220 14% 90%;
+    --ring: 217 91% 55%;
 
     --radius: 1rem;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 0 0% 10%;
-    --sidebar-primary: 0 0% 6%;
+    --sidebar-foreground: 222 47% 15%;
+    --sidebar-primary: 222 70% 22%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 95%;
-    --sidebar-accent-foreground: 0 0% 6%;
-    --sidebar-border: 0 0% 90%;
-    --sidebar-ring: 0 0% 20%;
+    --sidebar-accent: 217 33% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 220 14% 90%;
+    --sidebar-ring: 217 91% 55%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(0, 0%, 8%) 0%, hsl(0, 0%, 18%) 100%);
-    --gradient-deep: linear-gradient(135deg, hsl(0, 0%, 96%) 0%, hsl(0, 0%, 92%) 100%);
-    --gradient-glow: radial-gradient(circle at 50% 0%, hsl(156, 100%, 50% / 0.10), transparent 70%);
+    --gradient-primary: linear-gradient(135deg, hsl(222 70% 22%) 0%, hsl(217 91% 55%) 100%);
+    --gradient-deep: linear-gradient(135deg, hsl(222 70% 18%) 0%, hsl(222 60% 28%) 100%);
+    --gradient-glow: radial-gradient(circle at 50% 0%, hsl(217 91% 60% / 0.15), transparent 70%);
 
-    --shadow-glow: 0 0 32px hsl(156, 100%, 50% / 0.20);
-    --shadow-card: 0 8px 32px hsl(0, 0%, 0% / 0.08);
-    --shadow-elevated: 0 20px 50px -10px hsl(0, 0%, 0% / 0.18);
+    --shadow-glow: 0 0 32px hsl(217 91% 60% / 0.35);
+    --shadow-card: 0 8px 32px hsl(222 47% 11% / 0.08);
+    --shadow-elevated: 0 20px 50px -10px hsl(222 47% 11% / 0.18);
   }
 
   .dark {
-    /* DARK MODE — pure B&W iPhone-style minimal */
-    --background: 0 0% 0%;
+    /* DARK MODE — deep navy with electric-blue accents */
+    --background: 222 47% 6%;
     --foreground: 0 0% 100%;
-    --card: 0 0% 7%;
+    --card: 222 47% 9%;
     --card-foreground: 0 0% 100%;
-    --popover: 0 0% 10%;
+    --popover: 222 47% 9%;
     --popover-foreground: 0 0% 100%;
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 0%;
-    --primary-glow: 156 100% 55%;
-    --secondary: 0 0% 10%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 6%;
+    --primary-glow: 217 91% 65%;
+
+    --secondary: 222 30% 14%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 65%;
-    --accent: 156 100% 55%;
-    --accent-foreground: 0 0% 0%;
+
+    --muted: 222 30% 14%;
+    --muted-foreground: 215 20% 70%;
+
+    --accent: 217 91% 60%;
+    --accent-foreground: 222 47% 6%;
+
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --success: 156 100% 55%;
-    --warning: 51 100% 55%;
-    --border: 0 0% 14%;
-    --input: 0 0% 14%;
-    --ring: 0 0% 80%;
-    --sidebar-background: 0 0% 4%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 0 0% 10%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 14%;
-    --sidebar-ring: 0 0% 80%;
+    --success: 156 72% 50%;
+    --warning: 45 95% 55%;
 
-    --gradient-deep: linear-gradient(135deg, hsl(0, 0%, 6%) 0%, hsl(0, 0%, 12%) 100%);
-    --gradient-glow: radial-gradient(circle at 50% 0%, hsl(156, 100%, 55% / 0.12), transparent 70%);
-    --shadow-card: 0 8px 32px hsl(0, 0%, 0% / 0.6);
-    --shadow-elevated: 0 20px 50px -10px hsl(0, 0%, 0% / 0.85);
+    --border: 222 30% 16%;
+    --input: 222 30% 16%;
+    --ring: 217 91% 60%;
+
+    --sidebar-background: 222 47% 5%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-accent: 222 30% 12%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 222 30% 16%;
+    --sidebar-ring: 217 91% 60%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(222 70% 25%) 0%, hsl(217 91% 60%) 100%);
+    --gradient-deep: linear-gradient(135deg, hsl(222 47% 8%) 0%, hsl(222 47% 14%) 100%);
+    --gradient-glow: radial-gradient(circle at 50% 0%, hsl(217 91% 60% / 0.18), transparent 70%);
+    --shadow-card: 0 8px 32px hsl(0 0% 0% / 0.6);
+    --shadow-elevated: 0 20px 50px -10px hsl(0 0% 0% / 0.85);
   }
 }
 
@@ -137,13 +147,7 @@
   .shadow-elevated { box-shadow: var(--shadow-elevated); }
   .shadow-glow { box-shadow: var(--shadow-glow); }
 
-  .glass-card {
-    background: hsl(var(--card) / 0.85);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid hsl(var(--border));
-  }
-
+  .glass-card,
   .glass-panel {
     background: hsl(var(--card) / 0.85);
     backdrop-filter: blur(20px);
@@ -152,7 +156,7 @@
   }
 
   .neon-ring {
-    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.6), 0 0 24px hsl(var(--primary) / 0.4);
+    box-shadow: 0 0 0 2px hsl(var(--accent) / 0.6), 0 0 24px hsl(var(--accent) / 0.4);
   }
 
   .font-display {
@@ -160,10 +164,7 @@
     letter-spacing: -0.02em;
   }
 
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
 
   @keyframes slide-up {
@@ -178,13 +179,7 @@
   }
   .animate-glow { animation: glow-pulse 2.5s ease-in-out infinite; }
 
-  @keyframes story-ring-spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  .story-ring-spin { animation: story-ring-spin 3s linear infinite; }
-
-  /* Thin diagonal neon arc story ring (Instagram-style, premium) */
+  /* Two thin diagonal arcs (top-left + bottom-right), Instagram-style */
   .story-ring {
     position: relative;
     width: 80px;
@@ -193,31 +188,25 @@
     padding: 3px;
     background:
       conic-gradient(
-        from -30deg,
-        hsl(156 100% 55%) 0deg 70deg,
-        transparent 70deg 90deg,
-        hsl(156 100% 55%) 90deg 160deg,
-        transparent 160deg 180deg,
-        hsl(156 100% 55%) 180deg 250deg,
-        transparent 250deg 270deg,
-        hsl(156 100% 55%) 270deg 340deg,
-        transparent 340deg 360deg
+        from 135deg,
+        hsl(217 91% 60%) 0deg 110deg,
+        transparent 110deg 180deg,
+        hsl(217 91% 60%) 180deg 290deg,
+        transparent 290deg 360deg
       );
-    -webkit-mask:
-      radial-gradient(circle, transparent 35px, #000 36px 39px, transparent 40px);
-            mask:
-      radial-gradient(circle, transparent 35px, #000 36px 39px, transparent 40px);
-    filter: drop-shadow(0 0 6px hsl(156 100% 55% / 0.6));
+    -webkit-mask: radial-gradient(circle, transparent 35px, #000 36px 39px, transparent 40px);
+            mask: radial-gradient(circle, transparent 35px, #000 36px 39px, transparent 40px);
+    filter: drop-shadow(0 0 6px hsl(217 91% 60% / 0.55));
     transition: filter 0.3s ease;
   }
   .story-ring.viewed {
     background:
       conic-gradient(
-        from -30deg,
-        hsl(0 0% 35%) 0deg 70deg, transparent 70deg 90deg,
-        hsl(0 0% 35%) 90deg 160deg, transparent 160deg 180deg,
-        hsl(0 0% 35%) 180deg 250deg, transparent 250deg 270deg,
-        hsl(0 0% 35%) 270deg 340deg, transparent 340deg 360deg
+        from 135deg,
+        hsl(220 10% 45%) 0deg 110deg,
+        transparent 110deg 180deg,
+        hsl(220 10% 45%) 180deg 290deg,
+        transparent 290deg 360deg
       );
     filter: none;
   }
@@ -228,4 +217,5 @@
     overflow: hidden;
   }
 }
+
 
