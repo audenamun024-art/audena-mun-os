@@ -479,7 +479,6 @@ export type Database = {
           institution: string | null
           mun_experience: string | null
           muns_attended: number | null
-          phone: string | null
           rank_points: number | null
           secretary_names: string[] | null
           updated_at: string | null
@@ -496,7 +495,6 @@ export type Database = {
           institution?: string | null
           mun_experience?: string | null
           muns_attended?: number | null
-          phone?: string | null
           rank_points?: number | null
           secretary_names?: string[] | null
           updated_at?: string | null
@@ -513,7 +511,6 @@ export type Database = {
           institution?: string | null
           mun_experience?: string | null
           muns_attended?: number | null
-          phone?: string | null
           rank_points?: number | null
           secretary_names?: string[] | null
           updated_at?: string | null
