@@ -1,5 +1,6 @@
 import AppLayout from "@/components/layout/AppLayout";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -90,7 +91,8 @@ const Events = () => {
               const registered = registrations.has(e.id);
               const isFree = !e.fee || Number(e.fee) === 0;
               return (
-                <div key={e.id} className="glass-panel rounded-2xl overflow-hidden border border-border hover:border-primary/40 transition-colors">
+                <div key={e.id} className="glass-panel rounded-2xl overflow-hidden border border-border hover:border-accent/40 transition-colors">
+                  <Link to={`/events/${e.id}`} className="block">
                   <div className="aspect-[16/9] bg-gradient-to-br from-primary/30 to-accent/30 relative">
                     {e.cover_url ? (
                       <img src={e.cover_url} alt={e.title} className="w-full h-full object-cover" />

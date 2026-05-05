@@ -18,6 +18,7 @@ import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import Chats from "./pages/Chats";
 import Events from "./pages/Events";
+import EventDetail from "./pages/EventDetail";
 import Terms from "./pages/Terms";
 import SavedVideos from "./pages/SavedVideos";
 import NotFound from "./pages/NotFound";
@@ -51,6 +52,7 @@ const App = () => (
                 <Route path="/menu" element={<RequireAuth><ProfileMenu /></RequireAuth>} />
                 <Route path="/chats" element={<RequireAuth><Chats /></RequireAuth>} />
                 <Route path="/events" element={<RequireAuth><Events /></RequireAuth>} />
+                <Route path="/events/:id" element={<RequireAuth><EventDetail /></RequireAuth>} />
                 <Route path="/saved" element={<RequireAuth><SavedVideos /></RequireAuth>} />
                 {/* Public pages */}
                 <Route path="/terms" element={<Terms />} />
