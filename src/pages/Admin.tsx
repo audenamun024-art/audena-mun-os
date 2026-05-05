@@ -139,9 +139,9 @@ const Admin = () => {
 
   const handleSaveUser = async () => {
     if (!editingUser) return;
-    const { id, full_name, institution, bio, phone, rank_points } = editingUser;
+    const { id, full_name, institution, bio, rank_points } = editingUser;
     const { error } = await supabase.from("profiles").update({
-      full_name, institution, bio, phone, rank_points,
+      full_name, institution, bio, rank_points,
     }).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Profile updated");
