@@ -358,7 +358,15 @@ const Profile = () => {
                 contentTab === "tasks" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Receipt className="h-3.5 w-3.5" /> Tasks <span className="text-[10px] opacity-70">({payments.length})</span>
+              <ListChecks className="h-3.5 w-3.5" /> Tasks <span className="text-[10px] opacity-70">({tasks.length})</span>
+            </button>
+            <button
+              onClick={() => setContentTab("transactions")}
+              className={`flex items-center gap-1.5 px-5 py-2 text-xs font-semibold uppercase tracking-wider transition-colors border-b-2 ${
+                contentTab === "transactions" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Receipt className="h-3.5 w-3.5" /> Txns <span className="text-[10px] opacity-70">({payments.length})</span>
             </button>
           </div>
 
@@ -427,10 +435,46 @@ const Profile = () => {
 
           {contentTab === "tasks" && (
             <>
+              {tasks.length === 0 ? (
+                <div className="text-center py-12 glass-panel rounded-2xl">
+                  <ListChecks className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="font-semibold text-sm">No tasks assigned</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Admin-assigned tasks will appear here.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {tasks.map((t) => {
+                    const colors: Record<string, string> = {
+                      pending: "bg-yellow-500/10 text-yellow-600",
+                      in_progress: "bg-blue-500/10 text-blue-600",
+                      completed: "bg-green-500/10 text-green-600",
+                    };
+                    return (
+                      <div key={t.id} className="glass-panel rounded-xl p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-foreground">{t.title}</p>
+                            {t.description && <p className="text-[11px] text-muted-foreground mt-0.5">{t.description}</p>}
+                            {t.deadline && <p className="text-[10px] text-muted-foreground mt-1">Due {new Date(t.deadline).toLocaleDateString()}</p>}
+                          </div>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${colors[t.status] || colors.pending}`}>
+                            {t.status}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
+          {contentTab === "transactions" && (
+            <>
               {payments.length === 0 ? (
                 <div className="text-center py-12 glass-panel rounded-2xl">
                   <Receipt className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="font-semibold text-sm">No tasks yet</p>
+                  <p className="font-semibold text-sm">No transactions yet</p>
                 </div>
               ) : (
                 <div className="space-y-2">
