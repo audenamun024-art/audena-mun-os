@@ -1,10 +1,11 @@
 import { useNavigate } from "react-router-dom";
-import { Settings, LogOut, ArrowLeft, ListChecks, Bookmark, FileText } from "lucide-react";
+import { Settings, LogOut, ArrowLeft, ListChecks, Bookmark, FileText, Receipt } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 const menuItems = [
   { label: "Tasks", icon: ListChecks, path: "/profile?tab=tasks" },
+  { label: "Transaction History", icon: Receipt, path: "/profile?tab=transactions" },
   { label: "Saved Videos", icon: Bookmark, path: "/saved" },
   { label: "Settings", icon: Settings, path: null },
   { label: "Terms of Service", icon: FileText, path: "/terms" },
