@@ -1,12 +1,12 @@
 import AppLayout from "@/components/layout/AppLayout";
-import { Edit, Upload, Menu, Video as VideoIcon, Image as ImageIcon, Grid3x3, Play, Heart, Receipt, Plus, X } from "lucide-react";
+import { Edit, Upload, Menu, Video as VideoIcon, Image as ImageIcon, Grid3x3, Play, Heart, Receipt, Plus, X, ListChecks, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,12 +15,13 @@ import { useConnections } from "@/hooks/useConnections";
 import { toast } from "sonner";
 import { uploadPublicFile } from "@/lib/storage";
 
-type ContentTab = "videos" | "posts" | "tasks";
+type ContentTab = "videos" | "posts" | "tasks" | "transactions";
 
 const MUN_OPTIONS = ["No experience", "1–3 conferences", "4–10 conferences", "10+ conferences"];
 
 const Profile = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, roles } = useAuth();
   const { isOrganization } = useUserType();
   const { networkCount } = useConnections();
@@ -28,7 +29,9 @@ const Profile = () => {
   const [videos, setVideos] = useState<any[]>([]);
   const [posts, setPosts] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
-  const [contentTab, setContentTab] = useState<ContentTab>("videos");
+  const [tasks, setTasks] = useState<any[]>([]);
+  const initialTab = (searchParams.get("tab") as ContentTab) || "videos";
+  const [contentTab, setContentTab] = useState<ContentTab>(initialTab);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState<any>({
     full_name: "", institution: "", bio: "",
@@ -45,11 +48,12 @@ const Profile = () => {
     if (!user) { setLoading(false); return; }
     setLoading(true);
     try {
-      const [profileRes, videosRes, postsRes, paymentsRes] = await Promise.all([
+      const [profileRes, videosRes, postsRes, paymentsRes, tasksRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
         supabase.from("videos").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
         supabase.from("posts").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
         supabase.from("payments" as any).select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("tasks" as any).select("*").eq("assigned_to", user.id).order("created_at", { ascending: false }),
       ]);
       if (profileRes?.data) {
         const p = profileRes.data as any;
@@ -66,6 +70,7 @@ const Profile = () => {
       setVideos((videosRes.data as any[]) || []);
       setPosts((postsRes.data as any[]) || []);
       setPayments((paymentsRes.data as any[]) || []);
+      setTasks((tasksRes.data as any[]) || []);
     } catch (error) { console.error(error); toast.error("Could not load profile"); }
     finally { setLoading(false); }
   };
@@ -147,7 +152,11 @@ const Profile = () => {
   return (
     <AppLayout>
       <div className="max-w-3xl mx-auto p-4 md:p-8 space-y-6">
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-primary/10 border border-primary/20">
+            <Crown className="h-4 w-4 text-primary fill-primary/40" />
+            <span className="text-xs font-bold text-primary">Rank · {profile?.rank_points || 0}</span>
+          </div>
           <button onClick={() => navigate("/menu")} className="p-2 rounded-lg hover:bg-secondary text-foreground transition-colors">
             <Menu className="h-5 w-5" />
           </button>
@@ -349,7 +358,15 @@ const Profile = () => {
                 contentTab === "tasks" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Receipt className="h-3.5 w-3.5" /> Tasks <span className="text-[10px] opacity-70">({payments.length})</span>
+              <ListChecks className="h-3.5 w-3.5" /> Tasks <span className="text-[10px] opacity-70">({tasks.length})</span>
+            </button>
+            <button
+              onClick={() => setContentTab("transactions")}
+              className={`flex items-center gap-1.5 px-5 py-2 text-xs font-semibold uppercase tracking-wider transition-colors border-b-2 ${
+                contentTab === "transactions" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Receipt className="h-3.5 w-3.5" /> Txns <span className="text-[10px] opacity-70">({payments.length})</span>
             </button>
           </div>
 
@@ -418,10 +435,46 @@ const Profile = () => {
 
           {contentTab === "tasks" && (
             <>
+              {tasks.length === 0 ? (
+                <div className="text-center py-12 glass-panel rounded-2xl">
+                  <ListChecks className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="font-semibold text-sm">No tasks assigned</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Admin-assigned tasks will appear here.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {tasks.map((t) => {
+                    const colors: Record<string, string> = {
+                      pending: "bg-yellow-500/10 text-yellow-600",
+                      in_progress: "bg-blue-500/10 text-blue-600",
+                      completed: "bg-green-500/10 text-green-600",
+                    };
+                    return (
+                      <div key={t.id} className="glass-panel rounded-xl p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-foreground">{t.title}</p>
+                            {t.description && <p className="text-[11px] text-muted-foreground mt-0.5">{t.description}</p>}
+                            {t.deadline && <p className="text-[10px] text-muted-foreground mt-1">Due {new Date(t.deadline).toLocaleDateString()}</p>}
+                          </div>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${colors[t.status] || colors.pending}`}>
+                            {t.status}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
+          {contentTab === "transactions" && (
+            <>
               {payments.length === 0 ? (
                 <div className="text-center py-12 glass-panel rounded-2xl">
                   <Receipt className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="font-semibold text-sm">No tasks yet</p>
+                  <p className="font-semibold text-sm">No transactions yet</p>
                 </div>
               ) : (
                 <div className="space-y-2">
