@@ -21,6 +21,7 @@ const MUN_OPTIONS = ["No experience", "1–3 conferences", "4–10 conferences",
 
 const Profile = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, roles } = useAuth();
   const { isOrganization } = useUserType();
   const { networkCount } = useConnections();
@@ -28,7 +29,9 @@ const Profile = () => {
   const [videos, setVideos] = useState<any[]>([]);
   const [posts, setPosts] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
-  const [contentTab, setContentTab] = useState<ContentTab>("videos");
+  const [tasks, setTasks] = useState<any[]>([]);
+  const initialTab = (searchParams.get("tab") as ContentTab) || "videos";
+  const [contentTab, setContentTab] = useState<ContentTab>(initialTab);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState<any>({
     full_name: "", institution: "", bio: "",
@@ -45,11 +48,12 @@ const Profile = () => {
     if (!user) { setLoading(false); return; }
     setLoading(true);
     try {
-      const [profileRes, videosRes, postsRes, paymentsRes] = await Promise.all([
+      const [profileRes, videosRes, postsRes, paymentsRes, tasksRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
         supabase.from("videos").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
         supabase.from("posts").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
         supabase.from("payments" as any).select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("tasks" as any).select("*").eq("assigned_to", user.id).order("created_at", { ascending: false }),
       ]);
       if (profileRes?.data) {
         const p = profileRes.data as any;
@@ -66,6 +70,7 @@ const Profile = () => {
       setVideos((videosRes.data as any[]) || []);
       setPosts((postsRes.data as any[]) || []);
       setPayments((paymentsRes.data as any[]) || []);
+      setTasks((tasksRes.data as any[]) || []);
     } catch (error) { console.error(error); toast.error("Could not load profile"); }
     finally { setLoading(false); }
   };
