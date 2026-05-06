@@ -152,7 +152,11 @@ const Profile = () => {
   return (
     <AppLayout>
       <div className="max-w-3xl mx-auto p-4 md:p-8 space-y-6">
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-primary/10 border border-primary/20">
+            <Crown className="h-4 w-4 text-primary fill-primary/40" />
+            <span className="text-xs font-bold text-primary">Rank · {profile?.rank_points || 0}</span>
+          </div>
           <button onClick={() => navigate("/menu")} className="p-2 rounded-lg hover:bg-secondary text-foreground transition-colors">
             <Menu className="h-5 w-5" />
           </button>
