@@ -16,11 +16,11 @@ export const DEFAULT_COMMITTEES: CommitteeOption[] = [
   { code: "NATO", name: "North Atlantic Treaty Organization" },
   { code: "IP-Journalist", name: "International Press – Journalist" },
   { code: "IP-Photojournalist", name: "International Press – Photojournalist" },
-  { code: "UNW", name: "UN Women" },
+  { code: "UNW", name: "United Nations Entity for Gender Equality and the Empowerment of Women" },
   { code: "UNFCCC", name: "United Nations Framework Convention on Climate Change" },
   { code: "UNHRC", name: "United Nations Human Rights Council" },
-  { code: "GMGF", name: "Global Monetary & Governance Forum" },
-  { code: "UNGA-SPECOL", name: "Special Political & Decolonization Committee" },
+  { code: "GMGF", name: "Global Monetary and Governance Forum" },
+  { code: "UNGA-SPECOL", name: "United Nations General Assembly – Special Political and Decolonization Committee" },
 ];
 
 type Props = {
@@ -30,6 +30,7 @@ type Props = {
   multi?: boolean;
   label?: string;
   className?: string;
+  dropdownClassName?: string;
 };
 
 const CommitteeDropdown = ({
@@ -39,6 +40,7 @@ const CommitteeDropdown = ({
   multi = false,
   label = "All Committees",
   className,
+  dropdownClassName,
 }: Props) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -85,6 +87,7 @@ const CommitteeDropdown = ({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
         className="w-full flex items-center justify-between gap-2 px-4 py-3 rounded-xl bg-card border border-border hover:border-accent/50 transition-colors text-left"
       >
         <span className={cn("text-sm font-medium truncate", value.length ? "text-foreground" : "text-muted-foreground")}>
@@ -98,7 +101,8 @@ const CommitteeDropdown = ({
       <div
         className={cn(
           "overflow-hidden rounded-xl border border-border bg-popover shadow-elevated transition-all duration-200 ease-in-out absolute z-50 left-0 right-0 mt-2",
-          open ? "max-h-[340px] opacity-100" : "max-h-0 opacity-0 border-transparent"
+          open ? "max-h-[340px] opacity-100" : "max-h-0 opacity-0 border-transparent pointer-events-none",
+          dropdownClassName
         )}
       >
         <div className="p-2 border-b border-border bg-card sticky top-0">
