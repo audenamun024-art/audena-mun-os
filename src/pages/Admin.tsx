@@ -570,7 +570,7 @@ const Admin = () => {
         {/* EVENTS */}
         {activeTab === "events" && (
           <section className="space-y-2 animate-fade-in">
-            {filtered(events, ["title", "location", "category"]).map((e) => (
+                {filtered(events, ["title", "location", "category", "id", "created_by", "organizer_id"]).map((e) => (
               <div key={e.id} className="glass-panel rounded-xl p-3 flex items-center gap-3 shadow-card">
                 <div className="w-14 h-14 rounded-lg bg-secondary overflow-hidden shrink-0 flex items-center justify-center">
                   {e.cover_url ? <img src={e.cover_url} className="w-full h-full object-cover" alt="" /> : <Calendar className="h-5 w-5 text-muted-foreground" />}
@@ -623,7 +623,7 @@ const Admin = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered(payments, ["order_id", "purpose", "status"]).map((p) => {
+                {filtered(payments, ["order_id", "purpose", "status", "id", "user_id", "event_id"]).map((p) => {
                   const u = profiles.find((pr) => pr.user_id === p.user_id);
                   const StatusIcon = p.status === "paid" ? CheckCircle2 : (p.status === "pending" || p.status === "created") ? Clock : XCircle;
                   const color = p.status === "paid" ? "text-success" : (p.status === "pending" || p.status === "created") ? "text-amber-400" : "text-destructive";
@@ -652,7 +652,7 @@ const Admin = () => {
         {/* VIDEOS */}
         {activeTab === "videos" && (
           <section className="space-y-2 animate-fade-in">
-            {filtered(videos, ["title", "category"]).map((v) => (
+            {filtered(videos, ["title", "category", "id", "user_id"]).map((v) => (
               <div key={v.id} className={`flex items-center gap-3 p-3 glass-panel rounded-xl shadow-card ${v.flagged ? "border-amber-500/40" : ""}`}>
                 {v.thumbnail_url ? (
                   <img src={v.thumbnail_url} alt="" className="w-14 h-14 rounded-lg object-cover shrink-0" />
@@ -683,7 +683,7 @@ const Admin = () => {
         {/* POSTS */}
         {activeTab === "posts" && (
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 animate-fade-in">
-            {filtered(posts, ["caption", "category"]).map((p) => (
+            {filtered(posts, ["caption", "category", "id", "user_id"]).map((p) => (
               <div key={p.id} className="glass-panel rounded-xl overflow-hidden shadow-card group">
                 <div className="aspect-square overflow-hidden bg-secondary">
                   <img src={p.image_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
@@ -706,7 +706,7 @@ const Admin = () => {
         {/* STORIES */}
         {activeTab === "stories" && (
           <section className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 animate-fade-in">
-            {filtered(stories, ["caption"]).map((s) => {
+            {filtered(stories, ["caption", "id", "user_id"]).map((s) => {
               const expired = new Date(s.expires_at) < new Date();
               return (
                 <div key={s.id} className="glass-panel rounded-xl overflow-hidden shadow-card relative group">
