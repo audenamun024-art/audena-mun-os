@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
-import { Search, Sliders, Heart } from "lucide-react";
+import { Search, Sliders, Heart, UserRound } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Link } from "react-router-dom";
 
 const CATEGORIES = ["For You", "Trending", "Business", "Tech", "Speech", "Reaction"] as const;
 
@@ -11,7 +12,10 @@ const Explore = () => {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<typeof CATEGORIES[number]>("For You");
   const [posts, setPosts] = useState<any[]>([]);
+  const [people, setPeople] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const isLikelyId = useMemo(() => /^[a-z0-9-]{6,}$/i.test(query.trim()), [query]);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -29,6 +33,15 @@ const Explore = () => {
           String(p.id || "").toLowerCase().includes(term) ||
           String(p.user_id || "").toLowerCase().includes(term)
         );
+
+        const { data: profileRows } = await supabase
+          .from("profiles")
+          .select("id, user_id, full_name, institution, avatar_url, rank_points")
+          .or(`full_name.ilike.%${term}%,institution.ilike.%${term}%,user_id.ilike.%${term}%,id.ilike.%${term}%`)
+          .limit(12);
+        setPeople(profileRows || []);
+      } else {
+        setPeople([]);
       }
       setPosts(results);
       setLoading(false);
@@ -55,6 +68,37 @@ const Explore = () => {
             <Sliders className="h-4 w-4" />
           </button>
         </div>
+
+        {people.length > 0 && (
+          <section className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground">Profiles</h2>
+              {isLikelyId && <span className="text-[10px] text-muted-foreground">ID search</span>}
+            </div>
+            <div className="grid sm:grid-cols-2 gap-2">
+              {people.map((p) => (
+                <Link
+                  key={p.id}
+                  to={`/profile/${p.user_id}`}
+                  className="glass-panel rounded-2xl p-3 flex items-center gap-3 hover:border-primary/40 transition-colors"
+                >
+                  {p.avatar_url ? (
+                    <img src={p.avatar_url} alt={p.full_name || "Profile"} className="h-11 w-11 rounded-full object-cover" />
+                  ) : (
+                    <div className="h-11 w-11 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground">
+                      <UserRound className="h-5 w-5" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground truncate">{p.full_name || "Unnamed"}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{p.institution || `ID: ${p.user_id.slice(0, 8)}`}</p>
+                  </div>
+                  <span className="text-[10px] rounded-full bg-primary/10 px-2 py-0.5 text-primary font-semibold">View</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Categories */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
