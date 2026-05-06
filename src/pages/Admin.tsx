@@ -367,7 +367,7 @@ const Admin = () => {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search users, orgs, content..."
+                placeholder="Search users, IDs, orgs, content..."
                 className="pl-9 h-10 rounded-xl bg-secondary/60"
               />
             </div>
@@ -468,7 +468,7 @@ const Admin = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered(profiles, ["full_name", "institution"]).map((p, i) => (
+                  {filtered(profiles, ["full_name", "institution", "user_id", "id"]).map((p, i) => (
                     <TableRow key={p.id} className="hover:bg-secondary/40">
                       <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
                       <TableCell>
@@ -521,7 +521,7 @@ const Admin = () => {
         {/* ORGANIZATIONS */}
         {activeTab === "organizations" && (
           <section className="space-y-3 animate-fade-in">
-            {filtered(organizations, ["name", "email", "contact_person"]).length === 0 && (
+            {filtered(organizations, ["name", "email", "contact_person", "owner_user_id", "id"]).length === 0 && (
               <div className="glass-panel rounded-2xl p-12 text-center">
                 <Building2 className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
                 <p className="font-semibold mb-1">No organizations yet</p>
@@ -530,7 +530,7 @@ const Admin = () => {
               </div>
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {filtered(organizations, ["name", "email", "contact_person"]).map((o) => (
+              {filtered(organizations, ["name", "email", "contact_person", "owner_user_id", "id"]).map((o) => (
                 <div key={o.id} className="glass-panel rounded-2xl p-4 shadow-card">
                   <div className="flex items-start gap-3">
                     {o.logo_url ? (
@@ -570,7 +570,7 @@ const Admin = () => {
         {/* EVENTS */}
         {activeTab === "events" && (
           <section className="space-y-2 animate-fade-in">
-            {filtered(events, ["title", "location", "category"]).map((e) => (
+                {filtered(events, ["title", "location", "category", "id", "created_by", "organizer_id"]).map((e) => (
               <div key={e.id} className="glass-panel rounded-xl p-3 flex items-center gap-3 shadow-card">
                 <div className="w-14 h-14 rounded-lg bg-secondary overflow-hidden shrink-0 flex items-center justify-center">
                   {e.cover_url ? <img src={e.cover_url} className="w-full h-full object-cover" alt="" /> : <Calendar className="h-5 w-5 text-muted-foreground" />}
@@ -623,7 +623,7 @@ const Admin = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered(payments, ["order_id", "purpose", "status"]).map((p) => {
+                {filtered(payments, ["order_id", "purpose", "status", "id", "user_id", "event_id"]).map((p) => {
                   const u = profiles.find((pr) => pr.user_id === p.user_id);
                   const StatusIcon = p.status === "paid" ? CheckCircle2 : (p.status === "pending" || p.status === "created") ? Clock : XCircle;
                   const color = p.status === "paid" ? "text-success" : (p.status === "pending" || p.status === "created") ? "text-amber-400" : "text-destructive";
@@ -652,7 +652,7 @@ const Admin = () => {
         {/* VIDEOS */}
         {activeTab === "videos" && (
           <section className="space-y-2 animate-fade-in">
-            {filtered(videos, ["title", "category"]).map((v) => (
+            {filtered(videos, ["title", "category", "id", "user_id"]).map((v) => (
               <div key={v.id} className={`flex items-center gap-3 p-3 glass-panel rounded-xl shadow-card ${v.flagged ? "border-amber-500/40" : ""}`}>
                 {v.thumbnail_url ? (
                   <img src={v.thumbnail_url} alt="" className="w-14 h-14 rounded-lg object-cover shrink-0" />
@@ -683,7 +683,7 @@ const Admin = () => {
         {/* POSTS */}
         {activeTab === "posts" && (
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 animate-fade-in">
-            {filtered(posts, ["caption", "category"]).map((p) => (
+            {filtered(posts, ["caption", "category", "id", "user_id"]).map((p) => (
               <div key={p.id} className="glass-panel rounded-xl overflow-hidden shadow-card group">
                 <div className="aspect-square overflow-hidden bg-secondary">
                   <img src={p.image_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
@@ -706,7 +706,7 @@ const Admin = () => {
         {/* STORIES */}
         {activeTab === "stories" && (
           <section className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 animate-fade-in">
-            {filtered(stories, ["caption"]).map((s) => {
+            {filtered(stories, ["caption", "id", "user_id"]).map((s) => {
               const expired = new Date(s.expires_at) < new Date();
               return (
                 <div key={s.id} className="glass-panel rounded-xl overflow-hidden shadow-card relative group">

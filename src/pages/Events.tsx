@@ -53,6 +53,12 @@ const Events = () => {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this event? Committees and registrations will also be removed.")) return;
+    const [committeeRes, registrationRes] = await Promise.all([
+      supabase.from("committees" as any).delete().eq("event_id", id),
+      supabase.from("event_registrations" as any).delete().eq("event_id", id),
+    ]);
+    if (committeeRes.error) return toast.error(committeeRes.error.message);
+    if (registrationRes.error) return toast.error(registrationRes.error.message);
     const { error } = await supabase.from("events" as any).delete().eq("id", id);
     if (error) toast.error(error.message);
     else { toast.success("Event deleted"); fetchAll(); }
