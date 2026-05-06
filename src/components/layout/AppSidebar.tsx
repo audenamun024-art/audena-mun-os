@@ -17,9 +17,9 @@ const AppSidebar = () => {
 
   const mainItems = [
     { title: "Home", url: "/", icon: Home },
-    { title: "Drops", url: "/explore", icon: Compass },
-    { title: "Network", url: "/chats", icon: MessageCircle },
-    { title: "Connect", url: "/events", icon: Calendar },
+    { title: "Explore", url: "/explore", icon: Compass },
+    { title: "Chat", url: "/chats", icon: MessageCircle },
+    { title: "Events", url: "/events", icon: Calendar },
     { title: "Buzz", url: "/buzz", icon: Play },
     { title: "Profile", url: "/profile", icon: User },
   ];
