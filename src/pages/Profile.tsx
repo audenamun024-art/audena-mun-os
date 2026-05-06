@@ -1,12 +1,12 @@
 import AppLayout from "@/components/layout/AppLayout";
-import { Edit, Upload, Menu, Video as VideoIcon, Image as ImageIcon, Grid3x3, Play, Heart, Receipt, Plus, X } from "lucide-react";
+import { Edit, Upload, Menu, Video as VideoIcon, Image as ImageIcon, Grid3x3, Play, Heart, Receipt, Plus, X, ListChecks, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,7 +15,7 @@ import { useConnections } from "@/hooks/useConnections";
 import { toast } from "sonner";
 import { uploadPublicFile } from "@/lib/storage";
 
-type ContentTab = "videos" | "posts" | "tasks";
+type ContentTab = "videos" | "posts" | "tasks" | "transactions";
 
 const MUN_OPTIONS = ["No experience", "1–3 conferences", "4–10 conferences", "10+ conferences"];
 
