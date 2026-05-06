@@ -200,10 +200,11 @@ const Chats = () => {
     }
 
     try {
+      const term = query.trim();
       const { data, error } = await supabase
         .from("profiles")
-        .select("user_id, full_name, institution")
-        .ilike("full_name", `%${query}%`)
+        .select("id, user_id, full_name, institution")
+        .or(`full_name.ilike.%${term}%,institution.ilike.%${term}%,user_id.ilike.%${term}%,id.ilike.%${term}%`)
         .neq("user_id", user.id)
         .limit(10);
       if (error) throw error;
@@ -309,7 +310,7 @@ const Chats = () => {
             <h1 className="text-lg font-bold text-foreground mb-3">Chats</h1>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input value={search} onChange={(e) => void searchUsers(e.target.value)} placeholder="Search people..." className="pl-9 bg-secondary border-border h-10 rounded-xl text-sm" />
+              <Input value={search} onChange={(e) => void searchUsers(e.target.value)} placeholder="Search people or ID..." className="pl-9 bg-secondary border-border h-10 rounded-xl text-sm" />
             </div>
           </div>
 
@@ -322,7 +323,7 @@ const Chats = () => {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground truncate">{profile.full_name}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">{profile.institution || "AudenaHub User"}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{profile.institution || `ID: ${profile.user_id.slice(0, 8)}`}</p>
                   </div>
                 </button>
               ))}
