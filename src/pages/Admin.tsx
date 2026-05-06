@@ -367,7 +367,7 @@ const Admin = () => {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search users, orgs, content..."
+                placeholder="Search users, IDs, orgs, content..."
                 className="pl-9 h-10 rounded-xl bg-secondary/60"
               />
             </div>
@@ -468,7 +468,7 @@ const Admin = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered(profiles, ["full_name", "institution"]).map((p, i) => (
+                  {filtered(profiles, ["full_name", "institution", "user_id", "id"]).map((p, i) => (
                     <TableRow key={p.id} className="hover:bg-secondary/40">
                       <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
                       <TableCell>
@@ -521,7 +521,7 @@ const Admin = () => {
         {/* ORGANIZATIONS */}
         {activeTab === "organizations" && (
           <section className="space-y-3 animate-fade-in">
-            {filtered(organizations, ["name", "email", "contact_person"]).length === 0 && (
+            {filtered(organizations, ["name", "email", "contact_person", "owner_user_id", "id"]).length === 0 && (
               <div className="glass-panel rounded-2xl p-12 text-center">
                 <Building2 className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
                 <p className="font-semibold mb-1">No organizations yet</p>
@@ -530,7 +530,7 @@ const Admin = () => {
               </div>
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {filtered(organizations, ["name", "email", "contact_person"]).map((o) => (
+              {filtered(organizations, ["name", "email", "contact_person", "owner_user_id", "id"]).map((o) => (
                 <div key={o.id} className="glass-panel rounded-2xl p-4 shadow-card">
                   <div className="flex items-start gap-3">
                     {o.logo_url ? (
