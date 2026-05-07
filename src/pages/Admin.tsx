@@ -296,7 +296,7 @@ const Admin = () => {
       } else {
         const { data, error } = await supabase.from("events" as any).insert(payload).select("id").maybeSingle();
         if (error) throw error;
-        eventId = data?.id;
+        eventId = (data as any)?.id;
         toast.success("Event published");
       }
       if (eventId) {
