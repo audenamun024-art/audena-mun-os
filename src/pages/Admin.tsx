@@ -278,22 +278,40 @@ const Admin = () => {
     if (!eventForm.title.trim()) return toast.error("Title required");
     setEventSubmitting(true);
     try {
+      const validCommittees = eventCommittees.filter((committee) => committee.name.trim() && Number(committee.capacity) > 0);
+      const committeeCapacity = validCommittees.reduce((sum, committee) => sum + Number(committee.capacity || 0), 0);
       const payload: any = {
         title: eventForm.title, description: eventForm.description || null,
         cover_url: eventForm.cover_url || null, location: eventForm.location || null,
         start_date: eventForm.start_date || null, end_date: eventForm.end_date || null,
         fee: Number(eventForm.fee) || 0, currency: eventForm.currency,
-        capacity: Number(eventForm.capacity) || null, category: eventForm.category || null,
+        capacity: committeeCapacity || Number(eventForm.capacity) || null, category: eventForm.category || null,
         status: "published",
       };
+      let eventId = eventDialog.editing?.id;
       if (eventDialog.editing) {
         const { error } = await supabase.from("events" as any).update(payload).eq("id", eventDialog.editing.id);
         if (error) throw error;
         toast.success("Event updated");
       } else {
-        const { error } = await supabase.from("events" as any).insert(payload);
+        const { data, error } = await supabase.from("events" as any).insert(payload).select("id").maybeSingle();
         if (error) throw error;
+        eventId = data?.id;
         toast.success("Event published");
+      }
+      if (eventId) {
+        const { error: deleteCommitteesError } = await supabase.from("committees" as any).delete().eq("event_id", eventId);
+        if (deleteCommitteesError) throw deleteCommitteesError;
+        if (validCommittees.length > 0) {
+          const { error: committeesError } = await supabase.from("committees" as any).insert(
+            validCommittees.map((committee) => ({
+              event_id: eventId,
+              name: committee.name.trim(),
+              capacity: Number(committee.capacity),
+            }))
+          );
+          if (committeesError) throw committeesError;
+        }
       }
       setEventDialog({ open: false, editing: null });
     } catch (e: any) { toast.error(e.message || "Failed"); }
