@@ -961,6 +961,53 @@ const Admin = () => {
               <div><Label className="text-xs">Fee (₹)</Label><Input type="number" value={eventForm.fee} onChange={(e) => setEventForm({ ...eventForm, fee: Number(e.target.value) })} /></div>
               <div><Label className="text-xs">Capacity</Label><Input type="number" value={eventForm.capacity} onChange={(e) => setEventForm({ ...eventForm, capacity: Number(e.target.value) })} /></div>
             </div>
+            <div className="space-y-3 rounded-xl border border-border bg-secondary/30 p-3">
+              <div>
+                <Label className="mb-1.5 block text-xs">Committees</Label>
+                <CommitteeDropdown
+                  multi
+                  value={eventCommittees.map((committee) => committee.code)}
+                  onChange={syncEventCommittees}
+                  label="All Committees"
+                  dropdownClassName="z-[140]"
+                />
+              </div>
+              {eventCommittees.length > 0 ? (
+                <div className="space-y-2">
+                  {eventCommittees.map((committee) => (
+                    <div key={committee.code} className="rounded-lg border border-border bg-card p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-foreground">{committee.code}</p>
+                          <p className="text-xs text-muted-foreground leading-snug">{committee.name.replace(`${committee.code} – `, "")}</p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => setEventCommittees(eventCommittees.filter((item) => item.code !== committee.code))}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      <div className="mt-2">
+                        <Label className="text-[10px] text-muted-foreground">Capacity</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={committee.capacity}
+                          onChange={(e) => setEventCommittees(eventCommittees.map((item) => item.code === committee.code ? { ...item, capacity: e.target.value } : item))}
+                          className="mt-1 h-9"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="rounded-lg border border-dashed border-border bg-card/60 p-4 text-center text-xs text-muted-foreground">No committees selected</p>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEventDialog({ open: false, editing: null })}>Cancel</Button>
