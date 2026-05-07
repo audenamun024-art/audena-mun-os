@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import {
   Calendar, MapPin, Users, IndianRupee, Sparkles, Share2, Bookmark, ArrowLeft, Building2,
+  ChevronDown, Search,
 } from "lucide-react";
 import CashfreePaymentDialog from "@/components/payments/CashfreePaymentDialog";
 import { toast } from "sonner";
@@ -21,6 +22,8 @@ const EventDetail = () => {
   const [registered, setRegistered] = useState(false);
   const [loading, setLoading] = useState(true);
   const [payOpen, setPayOpen] = useState(false);
+  const [committeesOpen, setCommitteesOpen] = useState(false);
+  const [committeeQuery, setCommitteeQuery] = useState("");
 
   useEffect(() => {
     if (!id) return;
@@ -55,6 +58,9 @@ const EventDetail = () => {
   const isFree = !event?.fee || Number(event.fee) === 0;
   const totalCapacity = committees.reduce((s, c) => s + Number(c.capacity || 0), 0) || event?.capacity || 0;
   const remaining = Math.max(0, totalCapacity - registrationsCount);
+  const filteredCommittees = committees.filter((committee) =>
+    !committeeQuery.trim() || `${committee.name}`.toLowerCase().includes(committeeQuery.trim().toLowerCase())
+  );
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -116,18 +122,45 @@ const EventDetail = () => {
 
         {/* COMMITTEES */}
         {committees.length > 0 && (
-          <section className="space-y-3">
-            <h2 className="text-lg font-display font-bold text-foreground">Committees</h2>
-            <div className="grid sm:grid-cols-2 gap-3">
-              {committees.map((c) => (
-                <div key={c.id} className="glass-panel rounded-2xl p-4 border border-border">
-                  <h3 className="font-semibold text-foreground">{c.name}</h3>
-                  <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-                    <span>Capacity: {c.capacity}</span>
-                    <span className="text-accent font-semibold">{c.capacity} seats</span>
-                  </div>
+          <section className="rounded-2xl border border-border bg-card shadow-card overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setCommitteesOpen((current) => !current)}
+              aria-expanded={committeesOpen}
+              className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left transition-colors hover:bg-secondary/50"
+            >
+              <span>
+                <span className="block text-lg font-display font-bold text-foreground">All Committees</span>
+                <span className="block text-xs text-muted-foreground">{committees.length} committees available</span>
+              </span>
+              <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${committeesOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            <div className={`overflow-hidden border-t border-border transition-all duration-300 ${committeesOpen ? "max-h-[520px] opacity-100" : "max-h-0 opacity-0"}`}>
+              <div className="p-3 border-b border-border bg-secondary/30">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    value={committeeQuery}
+                    onChange={(event) => setCommitteeQuery(event.target.value)}
+                    placeholder="Search committee…"
+                    className="h-10 w-full rounded-xl border border-border bg-background pl-9 pr-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/30 placeholder:text-muted-foreground"
+                  />
                 </div>
-              ))}
+              </div>
+              <div className="max-h-[390px] overflow-y-auto p-3 grid gap-3 sm:grid-cols-2">
+                {filteredCommittees.length > 0 ? filteredCommittees.map((c) => (
+                  <div key={c.id} className="rounded-xl border border-border bg-background p-4">
+                    <h3 className="font-semibold text-foreground leading-snug">{c.name}</h3>
+                    <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+                      <span>Capacity: {c.capacity}</span>
+                      <span className="font-semibold text-primary">{c.capacity} seats left</span>
+                    </div>
+                  </div>
+                )) : (
+                  <p className="col-span-full py-8 text-center text-xs text-muted-foreground">No committees found</p>
+                )}
+              </div>
             </div>
           </section>
         )}

@@ -22,9 +22,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import audenaLogo from "@/assets/audena-logo.jpg";
 import AdminTasks from "@/components/admin/AdminTasks";
+import CommitteeDropdown, { DEFAULT_COMMITTEES } from "@/components/committees/CommitteeDropdown";
 import { ListChecks } from "lucide-react";
 
 type Tab = "overview" | "users" | "organizations" | "events" | "tasks" | "payments" | "videos" | "posts" | "stories";
+type CommitteeForm = { code: string; name: string; capacity: string };
+
+const committeeLabel = (code: string) => {
+  const option = DEFAULT_COMMITTEES.find((item) => item.code === code);
+  return option ? `${option.code} – ${option.name}` : code;
+};
+
+const committeeCodeFromName = (name: string) => {
+  const match = DEFAULT_COMMITTEES.find((item) => name.startsWith(`${item.code} –`) || name === item.code || name.includes(item.name));
+  return match?.code || name.split("–")[0]?.trim() || name;
+};
 
 const Admin = () => {
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -45,6 +57,7 @@ const Admin = () => {
     title: "", description: "", cover_url: "", location: "",
     start_date: "", end_date: "", fee: 0, currency: "INR", capacity: 0, category: "MUN",
   });
+  const [eventCommittees, setEventCommittees] = useState<CommitteeForm[]>([]);
   const [eventSubmitting, setEventSubmitting] = useState(false);
 
   // Dialogs
@@ -231,12 +244,15 @@ const Admin = () => {
   };
 
   // ---- event actions ----
-  const resetEventForm = () => setEventForm({
-    title: "", description: "", cover_url: "", location: "",
-    start_date: "", end_date: "", fee: 0, currency: "INR", capacity: 0, category: "MUN",
-  });
+  const resetEventForm = () => {
+    setEventForm({
+      title: "", description: "", cover_url: "", location: "",
+      start_date: "", end_date: "", fee: 0, currency: "INR", capacity: 0, category: "MUN",
+    });
+    setEventCommittees([]);
+  };
   const openCreateEvent = () => { resetEventForm(); setEventDialog({ open: true, editing: null }); };
-  const openEditEvent = (e: any) => {
+  const openEditEvent = async (e: any) => {
     setEventForm({
       title: e.title || "", description: e.description || "", cover_url: e.cover_url || "",
       location: e.location || "",
@@ -246,27 +262,56 @@ const Admin = () => {
       capacity: e.capacity || 0, category: e.category || "MUN",
     });
     setEventDialog({ open: true, editing: e });
+    const { data } = await supabase.from("committees" as any).select("*").eq("event_id", e.id).order("created_at", { ascending: true });
+    setEventCommittees(((data as any[]) || []).map((item) => {
+      const code = committeeCodeFromName(item.name || "");
+      return { code, name: item.name || committeeLabel(code), capacity: String(item.capacity || 50) };
+    }));
+  };
+  const syncEventCommittees = (codes: string[]) => {
+    setEventCommittees((current) => codes.map((code) => {
+      const existing = current.find((item) => item.code === code);
+      return existing || { code, name: committeeLabel(code), capacity: "50" };
+    }));
   };
   const submitEvent = async () => {
     if (!eventForm.title.trim()) return toast.error("Title required");
     setEventSubmitting(true);
     try {
+      const validCommittees = eventCommittees.filter((committee) => committee.name.trim() && Number(committee.capacity) > 0);
+      const committeeCapacity = validCommittees.reduce((sum, committee) => sum + Number(committee.capacity || 0), 0);
       const payload: any = {
         title: eventForm.title, description: eventForm.description || null,
         cover_url: eventForm.cover_url || null, location: eventForm.location || null,
         start_date: eventForm.start_date || null, end_date: eventForm.end_date || null,
         fee: Number(eventForm.fee) || 0, currency: eventForm.currency,
-        capacity: Number(eventForm.capacity) || null, category: eventForm.category || null,
+        capacity: committeeCapacity || Number(eventForm.capacity) || null, category: eventForm.category || null,
         status: "published",
       };
+      let eventId = eventDialog.editing?.id;
       if (eventDialog.editing) {
         const { error } = await supabase.from("events" as any).update(payload).eq("id", eventDialog.editing.id);
         if (error) throw error;
         toast.success("Event updated");
       } else {
-        const { error } = await supabase.from("events" as any).insert(payload);
+        const { data, error } = await supabase.from("events" as any).insert(payload).select("id").maybeSingle();
         if (error) throw error;
+        eventId = (data as any)?.id;
         toast.success("Event published");
+      }
+      if (eventId) {
+        const { error: deleteCommitteesError } = await supabase.from("committees" as any).delete().eq("event_id", eventId);
+        if (deleteCommitteesError) throw deleteCommitteesError;
+        if (validCommittees.length > 0) {
+          const { error: committeesError } = await supabase.from("committees" as any).insert(
+            validCommittees.map((committee) => ({
+              event_id: eventId,
+              name: committee.name.trim(),
+              capacity: Number(committee.capacity),
+            }))
+          );
+          if (committeesError) throw committeesError;
+        }
       }
       setEventDialog({ open: false, editing: null });
     } catch (e: any) { toast.error(e.message || "Failed"); }
@@ -915,6 +960,53 @@ const Admin = () => {
             <div className="grid grid-cols-2 gap-3">
               <div><Label className="text-xs">Fee (₹)</Label><Input type="number" value={eventForm.fee} onChange={(e) => setEventForm({ ...eventForm, fee: Number(e.target.value) })} /></div>
               <div><Label className="text-xs">Capacity</Label><Input type="number" value={eventForm.capacity} onChange={(e) => setEventForm({ ...eventForm, capacity: Number(e.target.value) })} /></div>
+            </div>
+            <div className="space-y-3 rounded-xl border border-border bg-secondary/30 p-3">
+              <div>
+                <Label className="mb-1.5 block text-xs">Committees</Label>
+                <CommitteeDropdown
+                  multi
+                  value={eventCommittees.map((committee) => committee.code)}
+                  onChange={syncEventCommittees}
+                  label="All Committees"
+                  dropdownClassName="z-[140]"
+                />
+              </div>
+              {eventCommittees.length > 0 ? (
+                <div className="space-y-2">
+                  {eventCommittees.map((committee) => (
+                    <div key={committee.code} className="rounded-lg border border-border bg-card p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-foreground">{committee.code}</p>
+                          <p className="text-xs text-muted-foreground leading-snug">{committee.name.replace(`${committee.code} – `, "")}</p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => setEventCommittees(eventCommittees.filter((item) => item.code !== committee.code))}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      <div className="mt-2">
+                        <Label className="text-[10px] text-muted-foreground">Capacity</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={committee.capacity}
+                          onChange={(e) => setEventCommittees(eventCommittees.map((item) => item.code === committee.code ? { ...item, capacity: e.target.value } : item))}
+                          className="mt-1 h-9"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="rounded-lg border border-dashed border-border bg-card/60 p-4 text-center text-xs text-muted-foreground">No committees selected</p>
+              )}
             </div>
           </div>
           <DialogFooter>
