@@ -22,9 +22,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import audenaLogo from "@/assets/audena-logo.jpg";
 import AdminTasks from "@/components/admin/AdminTasks";
+import CommitteeDropdown, { DEFAULT_COMMITTEES } from "@/components/committees/CommitteeDropdown";
 import { ListChecks } from "lucide-react";
 
 type Tab = "overview" | "users" | "organizations" | "events" | "tasks" | "payments" | "videos" | "posts" | "stories";
+type CommitteeForm = { code: string; name: string; capacity: string };
+
+const committeeLabel = (code: string) => {
+  const option = DEFAULT_COMMITTEES.find((item) => item.code === code);
+  return option ? `${option.code} – ${option.name}` : code;
+};
+
+const committeeCodeFromName = (name: string) => {
+  const match = DEFAULT_COMMITTEES.find((item) => name.startsWith(`${item.code} –`) || name === item.code || name.includes(item.name));
+  return match?.code || name.split("–")[0]?.trim() || name;
+};
 
 const Admin = () => {
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -45,6 +57,7 @@ const Admin = () => {
     title: "", description: "", cover_url: "", location: "",
     start_date: "", end_date: "", fee: 0, currency: "INR", capacity: 0, category: "MUN",
   });
+  const [eventCommittees, setEventCommittees] = useState<CommitteeForm[]>([]);
   const [eventSubmitting, setEventSubmitting] = useState(false);
 
   // Dialogs
@@ -231,12 +244,15 @@ const Admin = () => {
   };
 
   // ---- event actions ----
-  const resetEventForm = () => setEventForm({
-    title: "", description: "", cover_url: "", location: "",
-    start_date: "", end_date: "", fee: 0, currency: "INR", capacity: 0, category: "MUN",
-  });
+  const resetEventForm = () => {
+    setEventForm({
+      title: "", description: "", cover_url: "", location: "",
+      start_date: "", end_date: "", fee: 0, currency: "INR", capacity: 0, category: "MUN",
+    });
+    setEventCommittees([]);
+  };
   const openCreateEvent = () => { resetEventForm(); setEventDialog({ open: true, editing: null }); };
-  const openEditEvent = (e: any) => {
+  const openEditEvent = async (e: any) => {
     setEventForm({
       title: e.title || "", description: e.description || "", cover_url: e.cover_url || "",
       location: e.location || "",
@@ -246,6 +262,17 @@ const Admin = () => {
       capacity: e.capacity || 0, category: e.category || "MUN",
     });
     setEventDialog({ open: true, editing: e });
+    const { data } = await supabase.from("committees" as any).select("*").eq("event_id", e.id).order("created_at", { ascending: true });
+    setEventCommittees(((data as any[]) || []).map((item) => {
+      const code = committeeCodeFromName(item.name || "");
+      return { code, name: item.name || committeeLabel(code), capacity: String(item.capacity || 50) };
+    }));
+  };
+  const syncEventCommittees = (codes: string[]) => {
+    setEventCommittees((current) => codes.map((code) => {
+      const existing = current.find((item) => item.code === code);
+      return existing || { code, name: committeeLabel(code), capacity: "50" };
+    }));
   };
   const submitEvent = async () => {
     if (!eventForm.title.trim()) return toast.error("Title required");
