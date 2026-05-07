@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import {
   Calendar, MapPin, Users, IndianRupee, Sparkles, Share2, Bookmark, ArrowLeft, Building2,
+  ChevronDown, Search,
 } from "lucide-react";
 import CashfreePaymentDialog from "@/components/payments/CashfreePaymentDialog";
 import { toast } from "sonner";
@@ -21,6 +22,8 @@ const EventDetail = () => {
   const [registered, setRegistered] = useState(false);
   const [loading, setLoading] = useState(true);
   const [payOpen, setPayOpen] = useState(false);
+  const [committeesOpen, setCommitteesOpen] = useState(false);
+  const [committeeQuery, setCommitteeQuery] = useState("");
 
   useEffect(() => {
     if (!id) return;
@@ -55,6 +58,9 @@ const EventDetail = () => {
   const isFree = !event?.fee || Number(event.fee) === 0;
   const totalCapacity = committees.reduce((s, c) => s + Number(c.capacity || 0), 0) || event?.capacity || 0;
   const remaining = Math.max(0, totalCapacity - registrationsCount);
+  const filteredCommittees = committees.filter((committee) =>
+    !committeeQuery.trim() || `${committee.name}`.toLowerCase().includes(committeeQuery.trim().toLowerCase())
+  );
 
   const handleShare = async () => {
     const url = window.location.href;
