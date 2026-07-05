@@ -49,6 +49,90 @@ export type Database = {
           },
         ]
       }
+      collaboration_requests: {
+        Row: {
+          created_at: string
+          id: string
+          receiver_id: string
+          sender_id: string
+          status: string | null
+          type: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          receiver_id: string
+          sender_id: string
+          status?: string | null
+          type?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          receiver_id?: string
+          sender_id?: string
+          status?: string | null
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaboration_requests_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "collaboration_requests_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      collaborations: {
+        Row: {
+          collaborator_id: string
+          created_at: string
+          id: string
+          status: string | null
+          type: string | null
+          user_id: string
+        }
+        Insert: {
+          collaborator_id: string
+          created_at?: string
+          id?: string
+          status?: string | null
+          type?: string | null
+          user_id: string
+        }
+        Update: {
+          collaborator_id?: string
+          created_at?: string
+          id?: string
+          status?: string | null
+          type?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaborations_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "collaborations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       committees: {
         Row: {
           capacity: number
@@ -468,6 +552,8 @@ export type Database = {
         Row: {
           caption: string | null
           category: string | null
+          collaboration_status: string | null
+          collaborator_id: string | null
           created_at: string
           id: string
           image_url: string
@@ -478,6 +564,8 @@ export type Database = {
         Insert: {
           caption?: string | null
           category?: string | null
+          collaboration_status?: string | null
+          collaborator_id?: string | null
           created_at?: string
           id?: string
           image_url: string
@@ -488,6 +576,8 @@ export type Database = {
         Update: {
           caption?: string | null
           category?: string | null
+          collaboration_status?: string | null
+          collaborator_id?: string | null
           created_at?: string
           id?: string
           image_url?: string
@@ -495,7 +585,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "posts_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -728,6 +826,8 @@ export type Database = {
       videos: {
         Row: {
           category: string | null
+          collaboration_status: string | null
+          collaborator_id: string | null
           created_at: string | null
           description: string | null
           flagged: boolean | null
@@ -740,6 +840,8 @@ export type Database = {
         }
         Insert: {
           category?: string | null
+          collaboration_status?: string | null
+          collaborator_id?: string | null
           created_at?: string | null
           description?: string | null
           flagged?: boolean | null
@@ -752,6 +854,8 @@ export type Database = {
         }
         Update: {
           category?: string | null
+          collaboration_status?: string | null
+          collaborator_id?: string | null
           created_at?: string | null
           description?: string | null
           flagged?: boolean | null
@@ -762,7 +866,15 @@ export type Database = {
           video_url?: string
           views?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "videos_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       votes: {
         Row: {
